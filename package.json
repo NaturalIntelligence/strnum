@@ -1,6 +1,6 @@
 {
   "name": "strnum",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Parse String to Number based on configuration",
   "main": "strnum.js",
   "scripts": {
