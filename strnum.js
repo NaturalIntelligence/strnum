@@ -20,16 +20,19 @@ function toNumber(str, options = {}){
 
     options = Object.assign({}, consider, options );
     if(!str || typeof str !== "string" ) return str;
-    else if(options.skipLike !== undefined && options.skipLike.test(str)) return str;
-    else if (options.hex && hexRegex.test(str)) {
-        return Number.parseInt(str, 16);
+    
+    let trimmedStr  = str.trim();
+    
+    if(options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
+    else if (options.hex && hexRegex.test(trimmedStr)) {
+        return Number.parseInt(trimmedStr, 16);
     // } else if (options.parseOct && octRegex.test(str)) {
     //     return Number.parseInt(val, 8);
     // }else if (options.parseBin && binRegex.test(str)) {
     //     return Number.parseInt(val, 2);
     }else{
         //separate negative sign, leading zeros, and rest number
-        const match = numRegex.exec(str);
+        const match = numRegex.exec(trimmedStr);
         if(match){
             const negative = match[1];
             const leadingZeros = match[2];
@@ -37,7 +40,7 @@ function toNumber(str, options = {}){
             const eNotation = match[4] || match[6];
             if(leadingZeros.length === 1 && num[0] === ".") return Number(str);
             else if(!options.leadingZeros && leadingZeros.length > 0) return str;
-            else return Number(str);
+            else return Number(trimmedStr);
         }else{ //non-numeric string
             return str;
         }

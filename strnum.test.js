@@ -96,5 +96,12 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("+1212121212") ).toEqual(1212121212);
         expect(toNumber("+1212121212", { skipLike: /\+[0-9]{10}/} )).toEqual("+1212121212");
     })
+    it("should not change string if not number", () => {
+        expect(toNumber("+12 12")).toEqual("+12 12");
+        expect(toNumber("    +12 12   ")).toEqual("    +12 12   ");
+    })
+    it("should ignore sorrounded spaces ", () => {
+        expect(toNumber("   +1212   ")).toEqual(1212);
+    })
 
 });
