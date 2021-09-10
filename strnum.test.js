@@ -13,6 +13,11 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("12-12")).toEqual("12-12");
         expect(toNumber("12.12.12")).toEqual("12.12.12");
     })
+    it("should consider + sign", () => {
+        expect(toNumber("+12")).toEqual(12);
+        expect(toNumber("12+12")).toEqual("12+12");
+        expect(toNumber("1212+")).toEqual("1212+");
+    })
     it("should parse hexaDecimal values", () => {
         expect(toNumber("0x2f")).toEqual(47);
         expect(toNumber("-0x2f")).toEqual(-47);
@@ -83,5 +88,13 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
     });
+
+    it("should skip matching pattern", () => {
+        expect(toNumber("+12", { skipLike: /\+[0-9]{10}/} )).toEqual(12);
+        expect(toNumber("12+12", { skipLike: /\+[0-9]{10}/} )).toEqual("12+12");
+        expect(toNumber("12+1212121212", { skipLike: /\+[0-9]{10}/} )).toEqual("12+1212121212");
+        expect(toNumber("+1212121212") ).toEqual(1212121212);
+        expect(toNumber("+1212121212", { skipLike: /\+[0-9]{10}/} )).toEqual("+1212121212");
+    })
 
 });

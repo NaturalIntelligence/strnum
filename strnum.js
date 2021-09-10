@@ -1,12 +1,13 @@
 const hexRegex = /0x[a-zA-Z0-9]+/;
-const numRegex = /^(\-)?(0*)(\.[0-9]+(e\-?[0-9]+)?|[0-9]+(\.[0-9]+(e\-?[0-9]+)?)?)$/;
+const numRegex = /^([\-\+])?(0*)(\.[0-9]+(e\-?[0-9]+)?|[0-9]+(\.[0-9]+(e\-?[0-9]+)?)?)$/;
 // const octRegex = /0x[a-z0-9]+/;
 // const binRegex = /0x[a-z0-9]+/;
 
 const consider = {
     hex :  true,
     leadingZeros: true,
-    decimalPoint: "\."
+    decimalPoint: "\.",
+    //skipLike: /regex/
 };
 
 function toNumber(str, options = {}){
@@ -19,6 +20,7 @@ function toNumber(str, options = {}){
 
     options = Object.assign({}, consider, options );
     if(!str || typeof str !== "string" ) return str;
+    else if(options.skipLike !== undefined && options.skipLike.test(str)) return str;
     else if (options.hex && hexRegex.test(str)) {
         return Number.parseInt(str, 16);
     // } else if (options.parseOct && octRegex.test(str)) {
