@@ -43,7 +43,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber(".006")).toEqual(0.006);
         expect(toNumber("6.0")).toEqual(6);
         expect(toNumber("06.0")).toEqual(6);
-        
+
         expect(toNumber("0.0",  { leadingZeros :  false})).toEqual(0);
         expect(toNumber("00.00",  { leadingZeros :  false})).toEqual("00.00");
         expect(toNumber("0.06",  { leadingZeros :  false})).toEqual(0.06);
@@ -56,7 +56,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-06")).toEqual(-6);
         expect(toNumber("-06", { leadingZeros :  true})).toEqual(-6);
         expect(toNumber("-06", { leadingZeros :  false})).toEqual("-06");
-        
+
         expect(toNumber("-0.0")).toEqual(-0);
         expect(toNumber("-00.00")).toEqual(-0);
         expect(toNumber("-0.06")).toEqual(-0.06);
@@ -64,7 +64,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-.006")).toEqual(-0.006);
         expect(toNumber("-6.0")).toEqual(-6);
         expect(toNumber("-06.0")).toEqual(-6);
-        
+
         expect(toNumber("-0.0"   ,  { leadingZeros :  false})).toEqual(-0);
         expect(toNumber("-00.00",  { leadingZeros :  false})).toEqual("-00.00");
         expect(toNumber("-0.06",  { leadingZeros :  false})).toEqual(-0.06);
@@ -87,6 +87,17 @@ describe("Should convert all the valid numeric strings to number", () => {
 
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
+    });
+
+    it("scientific notation with upper E", () => {
+        expect(toNumber("01.0E2"  ,  { leadingZeros :  false})).toEqual("01.0E2");
+        expect(toNumber("-01.0E2"  ,  { leadingZeros :  false})).toEqual("-01.0E2");
+        expect(toNumber("01.0E2") ).toEqual(100);
+        expect(toNumber("-01.0E2") ).toEqual(-100);
+        expect(toNumber("1.0E2") ).toEqual(100);
+
+        expect(toNumber("-1.0E2") ).toEqual(-100);
+        expect(toNumber("1.0E-2")).toEqual(0.01);
     });
 
     it("should skip matching pattern", () => {

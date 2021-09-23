@@ -1,5 +1,5 @@
 const hexRegex = /0x[a-zA-Z0-9]+/;
-const numRegex = /^([\-\+])?(0*)(\.[0-9]+(e\-?[0-9]+)?|[0-9]+(\.[0-9]+(e\-?[0-9]+)?)?)$/;
+const numRegex = /^([\-\+])?(0*)(\.[0-9]+([eE]\-?[0-9]+)?|[0-9]+(\.[0-9]+([eE]\-?[0-9]+)?)?)$/;
 // const octRegex = /0x[a-z0-9]+/;
 // const binRegex = /0x[a-z0-9]+/;
 
@@ -20,9 +20,9 @@ function toNumber(str, options = {}){
 
     options = Object.assign({}, consider, options );
     if(!str || typeof str !== "string" ) return str;
-    
+
     let trimmedStr  = str.trim();
-    
+
     if(options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
     else if (options.hex && hexRegex.test(trimmedStr)) {
         return Number.parseInt(trimmedStr, 16);
