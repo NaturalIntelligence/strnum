@@ -1,4 +1,4 @@
-const hexRegex = /^0x[a-fA-F0-9]+$/;
+const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
 const numRegex = /^([\-\+])?(0*)(\.[0-9]+(e\-?[0-9]+)?|[0-9]+(\.[0-9]+(e\-?[0-9]+)?)?)$/;
 // const octRegex = /0x[a-z0-9]+/;
 // const binRegex = /0x[a-z0-9]+/;
