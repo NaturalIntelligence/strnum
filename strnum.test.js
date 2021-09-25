@@ -18,13 +18,19 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("12+12")).toEqual("12+12");
         expect(toNumber("1212+")).toEqual("1212+");
     })
-    it("should parse hexaDecimal values", () => {
+    it("should parse hexadecimal values", () => {
         expect(toNumber("0x2f")).toEqual(47);
         expect(toNumber("-0x2f")).toEqual(-47);
         expect(toNumber("0x2f", { hex :  true})).toEqual(47);
         expect(toNumber("-0x2f", { hex :  true})).toEqual(-47);
         expect(toNumber("0x2f", { hex :  false})).toEqual("0x2f");
         expect(toNumber("-0x2f", { hex :  false})).toEqual("-0x2f");
+    })
+    it("should not parse strings with 0x embedded", () => {
+        expect(toNumber("0xzz")).toEqual("0xzz");
+        expect(toNumber("iweraf0x123qwerqwer")).toEqual("iweraf0x123qwerqwer");
+        expect(toNumber("1230x55")).toEqual("1230x55");
+        expect(toNumber("JVBERi0xLjMNCiXi48")).toEqual("JVBERi0xLjMNCiXi48");
     })
     it("leading zeros", () => {
         expect(toNumber("06")).toEqual(6);
@@ -103,5 +109,4 @@ describe("Should convert all the valid numeric strings to number", () => {
     it("should ignore sorrounded spaces ", () => {
         expect(toNumber("   +1212   ")).toEqual(1212);
     })
-
 });
