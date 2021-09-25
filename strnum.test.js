@@ -95,6 +95,17 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("1.0e-2")).toEqual(0.01);
     });
 
+    it("scientific notation with upper E", () => {
+        expect(toNumber("01.0E2"  ,  { leadingZeros :  false})).toEqual("01.0E2");
+        expect(toNumber("-01.0E2"  ,  { leadingZeros :  false})).toEqual("-01.0E2");
+        expect(toNumber("01.0E2") ).toEqual(100);
+        expect(toNumber("-01.0E2") ).toEqual(-100);
+        expect(toNumber("1.0E2") ).toEqual(100);
+
+        expect(toNumber("-1.0E2") ).toEqual(-100);
+        expect(toNumber("1.0E-2")).toEqual(0.01);
+    });
+    
     it("should skip matching pattern", () => {
         expect(toNumber("+12", { skipLike: /\+[0-9]{10}/} )).toEqual(12);
         expect(toNumber("12+12", { skipLike: /\+[0-9]{10}/} )).toEqual("12+12");
