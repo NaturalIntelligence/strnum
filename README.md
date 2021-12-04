@@ -77,3 +77,10 @@ toNumber("1.0e-2"); //0.01)
 toNumber("+1212121212"); // 1212121212
 toNumber("+1212121212", { skipLike: /\+[0-9]{10}/} )); //"+1212121212"
 ```
+
+Supported Options
+```js
+hex :  true, //when hexadecimal string should be parsed
+leadingZeros: true, //when number with leading zeros like 08 should be parsed. 0.0 is not impacted
+eNotation: true //when number with eNotation or number parsed in eNotation should be considered
+```

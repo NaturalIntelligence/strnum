@@ -1,6 +1,6 @@
 {
   "name": "strnum",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Parse String to Number based on configuration",
   "main": "strnum.js",
   "scripts": {
@@ -17,5 +17,8 @@
     "url": "https://github.com/NaturalIntelligence/strnum"
   },
   "author": "Amit Gupta (https://amitkumargupta.work/)",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "jasmine": "^3.10.0"
+  }
 }

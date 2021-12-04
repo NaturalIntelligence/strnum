@@ -15,6 +15,7 @@ describe("Should convert all the valid numeric strings to number", () => {
     })
     it("should consider + sign", () => {
         expect(toNumber("+12")).toEqual(12);
+        expect(toNumber("+ 12")).toEqual("+ 12");
         expect(toNumber("12+12")).toEqual("12+12");
         expect(toNumber("1212+")).toEqual("1212+");
     })
@@ -40,7 +41,19 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("006")).toEqual(6);
         expect(toNumber("006", { leadingZeros :  true})).toEqual(6);
         expect(toNumber("006", { leadingZeros :  false})).toEqual("006");
+
+        expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  false})).toEqual("000000000000000000000000017717");
+        expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  true})).toEqual(17717);
+        expect(toNumber("020211201030005811824")  ).toEqual("020211201030005811824");
+        expect(toNumber("0420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
     })
+    it("invalid floating number", () => {
+        expect(toNumber("20.21.030")  ).toEqual("20.21.030");
+        expect(toNumber("0.21.030")  ).toEqual("0.21.030");
+        expect(toNumber("0.21.")  ).toEqual("0.21.");
+        expect(toNumber("0.")  ).toEqual("0.");
+        expect(toNumber("1.")  ).toEqual("1.");
+    });
     it("floating point and leading zeros", () => {
         expect(toNumber("0.0")).toEqual(0);
         expect(toNumber("00.00")).toEqual(0);
@@ -59,6 +72,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("06.0"  ,  { leadingZeros :  false})).toEqual("06.0");
     })
     it("negative number  leading zeros", () => {
+        expect(toNumber("+06")).toEqual(6);
         expect(toNumber("-06")).toEqual(-6);
         expect(toNumber("-06", { leadingZeros :  true})).toEqual(-6);
         expect(toNumber("-06", { leadingZeros :  false})).toEqual("-06");
@@ -80,9 +94,10 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-06.0"  ,  { leadingZeros :  false})).toEqual("-06.0");
     })
     it("long number", () => {
-        expect(toNumber("420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
-        expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  false})).toEqual("000000000000000000000000017717");
-        expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  true})).toEqual(17717);
+        expect(toNumber("020211201030005811824")  ).toEqual("020211201030005811824");
+        expect(toNumber("20211201030005811824")  ).toEqual("20211201030005811824");
+        expect(toNumber("20.211201030005811824")  ).toEqual("20.211201030005811824");
+        expect(toNumber("0.211201030005811824")  ).toEqual("0.211201030005811824");
     });
     it("scientific notation", () => {
         expect(toNumber("01.0e2"  ,  { leadingZeros :  false})).toEqual("01.0e2");
@@ -93,6 +108,10 @@ describe("Should convert all the valid numeric strings to number", () => {
 
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
+
+        expect(toNumber("420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
+        expect(toNumber("420926189200190257681175017717" , { eNotation: false} )).toEqual("420926189200190257681175017717");
+
     });
 
     it("scientific notation with upper E", () => {
@@ -119,5 +138,13 @@ describe("Should convert all the valid numeric strings to number", () => {
     })
     it("should ignore sorrounded spaces ", () => {
         expect(toNumber("   +1212   ")).toEqual(1212);
+    })
+    
+    it("negative numbers", () => {
+        expect(toNumber("+1212")).toEqual(1212);
+        expect(toNumber("+12.12")).toEqual(12.12);
+        expect(toNumber("-12.12")).toEqual(-12.12);
+        expect(toNumber("-012.12")).toEqual(-12.12);
+        expect(toNumber("-012.12")).toEqual(-12.12);
     })
 });
