@@ -1,6 +1,16 @@
 # strnum
 Parse string into Number based on configuration
 
+## Users
+
+<a href="https://github.com/aws-amplify" target="_blank"><img src="https://avatars.githubusercontent.com/u/41077760?s=100&v=4"></a>
+<a href="https://github.com/astrapay" target="_blank"><img src="https://avatars.githubusercontent.com/u/90901882?s=100&v=4"></a>
+<a href="https://github.com/process-analytics" target="_blank"><img src="https://avatars.githubusercontent.com/u/60110287?s=100&v=4"></a>
+<a href="https://github.com/NaturalIntelligence" target="_blank"><img src="https://avatars.githubusercontent.com/u/16322633?s=100&v=4"></a>
+Many React Native projects and plugins
+
+## Usage
+
 ```bash
 npm install strnum
 ```
