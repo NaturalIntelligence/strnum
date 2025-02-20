@@ -51,11 +51,12 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("20.21.030")  ).toEqual("20.21.030");
         expect(toNumber("0.21.030")  ).toEqual("0.21.030");
         expect(toNumber("0.21.")  ).toEqual("0.21.");
-        expect(toNumber("0.")  ).toEqual("0.");
-        expect(toNumber("1.")  ).toEqual("1.");
+        expect(toNumber("0.")).toEqual(0);
+        expect(toNumber("+0.")).toEqual(0);
+        expect(toNumber("-0.")).toEqual(-0);
+        expect(toNumber("1.")  ).toEqual(1);
     });
     it("floating point and leading zeros", () => {
-        expect(toNumber("0.0")).toEqual(0);
         expect(toNumber("00.00")).toEqual(0);
         expect(toNumber("0.06")).toEqual(0.06);
         expect(toNumber("00.6")).toEqual(0.6);

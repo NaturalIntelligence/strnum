@@ -1,5 +1,5 @@
 const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
-const numRegex = /^([\-\+])?(0*)(\.[0-9]+|[0-9]+(\.[0-9]+)?)$/;
+const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
 // const octRegex = /^0x[a-z0-9]+/;
 // const binRegex = /0x[a-z0-9]+/;
 
@@ -26,7 +26,7 @@ function toNumber(str, options = {}){
     //     return Number.parseInt(val, 8);
     }else if (trimmedStr.search(/[eE]/)!== -1) { //eNotation
         const notation = trimmedStr.match(/^([-\+])?(0*)([0-9]*(\.[0-9]*)?[eE][-\+]?[0-9]+)/); 
-        // +00.123 => [ '+00', '+', '00', '.123', ..
+        // +00.123 => [ , '+', '00', '.123', ..
         if(notation){
             if(options.leadingZeros){ //accept with leading zeros
                 trimmedStr = (notation[1] || "") + notation[3];
@@ -45,6 +45,7 @@ function toNumber(str, options = {}){
     }else{
         //separate negative sign, leading zeros, and rest number
         const match = numRegex.exec(trimmedStr);
+        // +00.123 => [ , '+', '00', '.123', ..
         if(match){
             const sign = match[1];
             const leadingZeros = match[2];
