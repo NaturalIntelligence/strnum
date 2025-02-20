@@ -108,10 +108,13 @@ describe("Should convert all the valid numeric strings to number", () => {
 
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
-
+        
         expect(toNumber("420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
         expect(toNumber("420926189200190257681175017717" , { eNotation: false} )).toEqual("420926189200190257681175017717");
-
+        
+        expect(toNumber("1e-2")).toEqual(0.01);
+        expect(toNumber("1e+2")).toEqual(100);
+        expect(toNumber("1.e+2")).toEqual(100);
     });
 
     it("scientific notation with upper E", () => {
