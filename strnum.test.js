@@ -34,6 +34,14 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("JVBERi0xLjMNCiXi48")).toEqual("JVBERi0xLjMNCiXi48");
     })
     it("leading zeros", () => {
+        expect(toNumber("0")).toEqual(0);
+        expect(toNumber("00")).toEqual(0);
+        expect(toNumber("00.0")).toEqual(0);
+
+        expect(toNumber("0",{ leadingZeros :  false})).toEqual(0);
+        expect(toNumber("00",{ leadingZeros :  false})).toEqual("00");
+        expect(toNumber("00.0",{ leadingZeros :  false})).toEqual("00.0");
+
         expect(toNumber("06")).toEqual(6);
         expect(toNumber("06", { leadingZeros :  true})).toEqual(6);
         expect(toNumber("06", { leadingZeros :  false})).toEqual("06");
@@ -51,12 +59,12 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("20.21.030")  ).toEqual("20.21.030");
         expect(toNumber("0.21.030")  ).toEqual("0.21.030");
         expect(toNumber("0.21.")  ).toEqual("0.21.");
+    });
+    it("floating point and leading zeros", () => {
         expect(toNumber("0.")).toEqual(0);
         expect(toNumber("+0.")).toEqual(0);
         expect(toNumber("-0.")).toEqual(-0);
         expect(toNumber("1.")  ).toEqual(1);
-    });
-    it("floating point and leading zeros", () => {
         expect(toNumber("00.00")).toEqual(0);
         expect(toNumber("0.06")).toEqual(0.06);
         expect(toNumber("00.6")).toEqual(0.6);
