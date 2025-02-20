@@ -1,5 +1,8 @@
 
-**2.0.2 / 2025-02-20**
+**2.0.4 / 2025-02-20**
+- remove console log
+
+**2.0.3 / 2025-02-20**
 - fix for string which are falsly identified as e-notation
 
 **2.0.1 / 2025-02-20**
