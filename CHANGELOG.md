@@ -1,4 +1,7 @@
 
+**2.0.2 / 2025-02-20**
+- fix for string which are falsly identified as e-notation
+
 **2.0.1 / 2025-02-20**
 - fix: handle only zeros
 - fix: return original string when NaN

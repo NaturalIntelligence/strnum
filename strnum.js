@@ -26,9 +26,10 @@ export default function toNumber(str, options = {}){
     // }else if (options.oct && octRegex.test(str)) {
     //     return Number.parseInt(val, 8);
     }else if (trimmedStr.search(/[eE]/)!== -1) { //eNotation
-        const notation = trimmedStr.match(/^([-\+])?(0*)([0-9]*(\.[0-9]*)?[eE][-\+]?[0-9]+)/); 
+        const notation = trimmedStr.match(/^([-\+])?(0*)([0-9]*(\.[0-9]*)?[eE][-\+]?[0-9]+)$/); 
         // +00.123 => [ , '+', '00', '.123', ..
         if(notation){
+            console.log(notation)
             if(options.leadingZeros){ //accept with leading zeros
                 trimmedStr = (notation[1] || "") + notation[3];
             }else{
