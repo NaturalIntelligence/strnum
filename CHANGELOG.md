@@ -1,4 +1,9 @@
 
+**2.1.0 / 2025-05-01**
+- fix e-notation 
+  - to return string when invalid enotation is found. Eg `E24`
+  - to return valid number when only leading zero before e char is present
+
 **2.0.5 / 2025-02-27**
 - changes done in 1.1.2
 

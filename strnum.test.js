@@ -138,6 +138,13 @@ describe("Should convert all the valid numeric strings to number", () => {
 
         expect(toNumber("-1.0E2") ).toEqual(-100);
         expect(toNumber("1.0E-2")).toEqual(0.01);
+
+        expect(toNumber("E-2")).toEqual("E-2");
+        expect(toNumber("E2")).toEqual("E2");
+        expect(toNumber("0E2")).toEqual(0);
+        expect(toNumber("-0E2")).toEqual(-0);
+        expect(toNumber("00E2")).toEqual("00E2");
+        expect(toNumber("00E2",  { leadingZeros :  false})).toEqual("00E2");
     });
     
     it("should skip matching pattern", () => {
