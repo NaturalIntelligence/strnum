@@ -1,4 +1,13 @@
 
+**2.0.5 / 2025-02-27**
+- changes done in 1.1.2
+
+**1.1.2 / 2025-02-27**
+- fix skiplike for 0
+
+**1.1.1 / 2025-02-21**
+- All recent fixes of version 2
+
 **2.0.4 / 2025-02-20**
 - remove console log
 

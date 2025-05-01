@@ -16,11 +16,11 @@ const consider = {
 export default function toNumber(str, options = {}){
     options = Object.assign({}, consider, options );
     if(!str || typeof str !== "string" ) return str;
-    else if(str==="0") return 0;
-
+    
     let trimmedStr  = str.trim();
-
+    
     if(options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
+    else if(str==="0") return 0;
     else if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
     // }else if (options.oct && octRegex.test(str)) {
@@ -49,33 +49,42 @@ export default function toNumber(str, options = {}){
         const match = numRegex.exec(trimmedStr);
         // +00.123 => [ , '+', '00', '.123', ..
         if(match){
-            const sign = match[1];
+            const sign = match[1] || "";
             const leadingZeros = match[2];
             let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
+            const decimalAdjacentToLeadingZeros = sign ? // 0., -00., 000.
+                str[leadingZeros.length+1] === "." 
+                : str[leadingZeros.length] === ".";
+
             //trim ending zeros for floating number
-            
-            if(!options.leadingZeros && leadingZeros.length > 0 && sign && trimmedStr[2] !== ".") return str; //-0123
-            else if(!options.leadingZeros && leadingZeros.length > 0 && !sign && trimmedStr[1] !== ".") return str; //0123
-            else if(options.leadingZeros && leadingZeros===str) return 0; //00
-            
+            if(!options.leadingZeros //leading zeros are not allowed
+                && (leadingZeros.length > 1 
+                    || (leadingZeros.length === 1 && !decimalAdjacentToLeadingZeros))){
+                // 00, 00.3, +03.24, 03, 03.24
+                return str;
+            }
             else{//no leading zeros or leading zeros are allowed
                 const num = Number(trimmedStr);
-                const numStr = "" + num;
+                const parsedStr = String(num);
 
-                if(numStr.search(/[eE]/) !== -1){ //given number is long and parsed to eNotation
+                if( num === 0 || num === -0) return num;
+                if(parsedStr.search(/[eE]/) !== -1){ //given number is long and parsed to eNotation
                     if(options.eNotation) return num;
                     else return str;
                 }else if(trimmedStr.indexOf(".") !== -1){ //floating number
-                    if(numStr === "0" && (numTrimmedByZeros === "") ) return num; //0.0
-                    else if(numStr === numTrimmedByZeros) return num; //0.456. 0.79000
-                    else if( sign && numStr === "-"+numTrimmedByZeros) return num;
+                    if(parsedStr === "0") return num; //0.0
+                    else if(parsedStr === numTrimmedByZeros) return num; //0.456. 0.79000
+                    else if( parsedStr === `${sign}${numTrimmedByZeros}`) return num;
                     else return str;
                 }
                 
+                let n = leadingZeros? numTrimmedByZeros : trimmedStr;
                 if(leadingZeros){
-                    return (numTrimmedByZeros === numStr) || (sign+numTrimmedByZeros === numStr) ? num : str
+                    // -009 => -9
+                    return (n === parsedStr) || (sign+n === parsedStr) ? num : str
                 }else  {
-                    return (trimmedStr === numStr) || (trimmedStr === sign+numStr) ? num : str
+                    // +9
+                    return (n === parsedStr) || (n === sign+parsedStr) ? num : str
                 }
             }
         }else{ //non-numeric string
@@ -94,7 +103,7 @@ function trimZeros(numStr){
         numStr = numStr.replace(/0+$/, ""); //remove ending zeros
         if(numStr === ".")  numStr = "0";
         else if(numStr[0] === ".")  numStr = "0"+numStr;
-        else if(numStr[numStr.length-1] === ".")  numStr = numStr.substr(0,numStr.length-1);
+        else if(numStr[numStr.length-1] === ".")  numStr = numStr.substring(0,numStr.length-1);
         return numStr;
     }
     return numStr;

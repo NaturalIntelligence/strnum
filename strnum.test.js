@@ -7,6 +7,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("")).toEqual("");
         expect(toNumber("string")).toEqual("string");
         expect(toNumber("e89794659669cb7bb967db73a7ea6889c3891727")).toEqual("e89794659669cb7bb967db73a7ea6889c3891727");
+        
     });
     it("should not parse number with spaces or comma", () => {
         expect(toNumber("12,12")).toEqual("12,12");
@@ -94,6 +95,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-.006")).toEqual(-0.006);
         expect(toNumber("-6.0")).toEqual(-6);
         expect(toNumber("-06.0")).toEqual(-6);
+        expect(toNumber("+06.0")).toEqual(6);
         
         expect(toNumber("-0.0"   ,  { leadingZeros :  false})).toEqual(-0);
         expect(toNumber("-00.00",  { leadingZeros :  false})).toEqual("-00.00");
@@ -139,6 +141,7 @@ describe("Should convert all the valid numeric strings to number", () => {
     });
     
     it("should skip matching pattern", () => {
+        expect(toNumber("0", { skipLike: /.*/ })).toEqual("0");
         expect(toNumber("+12", { skipLike: /\+[0-9]{10}/} )).toEqual(12);
         expect(toNumber("12+12", { skipLike: /\+[0-9]{10}/} )).toEqual("12+12");
         expect(toNumber("12+1212121212", { skipLike: /\+[0-9]{10}/} )).toEqual("12+1212121212");
