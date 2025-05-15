@@ -52,7 +52,7 @@ export default function toNumber(str, options = {}){
                 const num = Number(trimmedStr);
                 const parsedStr = String(num);
 
-                if( num === 0 || num === -0) return num;
+                if( num === 0) return num;
                 if(parsedStr.search(/[eE]/) !== -1){ //given number is long and parsed to eNotation
                     if(options.eNotation) return num;
                     else return str;

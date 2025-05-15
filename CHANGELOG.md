@@ -1,4 +1,7 @@
 
+**2.1.1 / 2025-05-15**
+- remove unnecessary check to remove lint error
+
 **2.1.0 / 2025-05-01**
 - fix e-notation 
   - to return string when invalid enotation is found. Eg `E24`
