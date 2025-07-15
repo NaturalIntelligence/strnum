@@ -35,6 +35,7 @@ export default function toNumber(str, options = {}) {
     else if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
     } else if (trimmedStr.search(/.+[eE].+/) !== -1) { //eNotation
+        if (options.eNotation === false) return str; //skip eNotation{
         return resolveEnotation(str, trimmedStr, options);
     } else {
         //separate negative sign, leading zeros, and rest number
@@ -91,11 +92,11 @@ const eNotationRegx = /^([-+])?(0*)(\d*(\.\d*)?[eE][-\+]?\d+)$/;
  * @template {*} T
  * @param {T} str 
  * @param {string} trimmedStr 
- * @param {Options} options 
+ * @param {object} options 
+ * @param {boolean} [options.leadingZeros=true]
  * @returns {number|T}
  */
 function resolveEnotation(str, trimmedStr, options) {
-    if (!options.eNotation) return str;
     const notation = trimmedStr.match(eNotationRegx);
     if (notation) {
         let sign = notation[1] || "";
@@ -124,7 +125,7 @@ function resolveEnotation(str, trimmedStr, options) {
  * @returns {string} numStr with trimmed ending zeros
  */
 function trimZeros(numStr) {
-    if (numStr && numStr.indexOf(".") !== -1) {//float
+    if (numStr.indexOf(".") !== -1) {//float
         numStr = numStr.replace(/0+$/, ""); //remove ending zeros
         if (numStr === ".") numStr = "0";
         else if (numStr[0] === ".") numStr = "0" + numStr;
