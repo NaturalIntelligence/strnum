@@ -1,5 +1,5 @@
-const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
-const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
+const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/u;
+const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/u;
 
 /**
  * @typedef {Object} Options
@@ -43,7 +43,7 @@ export default function toNumber(str, options = {}) {
         // +00.123 => [ , '+', '00', '.123', ..
         if (match) {
             const sign = match[1] || "";
-            const leadingZeros = match[2];
+            const leadingZeros = match[2] || "";
             let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
             const decimalAdjacentToLeadingZeros = sign ? // 0., -00., 000.
                 str[leadingZeros.length + 1] === "."
@@ -86,7 +86,7 @@ export default function toNumber(str, options = {}) {
     }
 }
 
-const eNotationRegx = /^([-+])?(0*)(\d*(\.\d*)?[eE][-\+]?\d+)$/;
+const eNotationRegx = /^([-+])?(0*)(\d*(\.\d*)?([eE])[-\+]?\d+)$/u;
 
 /**
  * @template {*} T
@@ -100,7 +100,7 @@ function resolveEnotation(str, trimmedStr, options) {
     const notation = trimmedStr.match(eNotationRegx);
     if (notation) {
         let sign = notation[1] || "";
-        const eChar = notation[3].indexOf("e") === -1 ? "E" : "e";
+        const eChar = notation[5];
         const leadingZeros = notation[2];
         const eAdjacentToLeadingZeros = sign ? // 0E.
             str[leadingZeros.length + 1] === eChar
@@ -108,7 +108,7 @@ function resolveEnotation(str, trimmedStr, options) {
 
         if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str;
         else if (leadingZeros.length === 1
-            && (notation[3].startsWith(`.${eChar}`) || notation[3][0] === eChar)) {
+            && ((notation[3][0] === '.' && notation[3][1] === eChar) || notation[3][0] === eChar)) {
             return Number(trimmedStr);
         } else if (options.leadingZeros && !eAdjacentToLeadingZeros) { //accept with leading zeros
             //remove leading 0s
@@ -121,17 +121,57 @@ function resolveEnotation(str, trimmedStr, options) {
 }
 
 /**
- * @param {string} numStr without leading zeros
- * @returns {string} numStr with trimmed ending zeros
+ * @param {string} numStr numerical string with leading and trailing zeros
+ * @returns {string} numerical string with trimmed zeros
  */
 function trimZeros(numStr) {
-    if (numStr.indexOf(".") !== -1) {//float
-        numStr = numStr.replace(/0+$/, ""); //remove ending zeros
-        if (numStr === ".") numStr = "0";
-        else if (numStr[0] === ".") numStr = "0" + numStr;
-        else if (numStr[numStr.length - 1] === ".") numStr = numStr.substring(0, numStr.length - 1);
-        return numStr;
+    const dotPosition = numStr.indexOf(".");
+
+    // not a float number
+    if (dotPosition === -1) return numStr;
+
+    const len = numStr.length;
+    let trimStart = 0;
+    let trimEnd = len;
+
+    let i = 0;
+
+    if (dotPosition !== 0) {
+        while (i < dotPosition) {
+            if (numStr[i] !== "0") {
+                trimStart = i;
+                break;
+            }
+            i++;
+        }
     }
+
+    i = len - 1;
+    if (dotPosition !== i) {
+        while (i >= dotPosition) {
+            if (numStr[i] !== "0") {
+                trimEnd = i + 1; //+1 to include the last non-zero digit
+                break;
+            }
+            i--
+        }
+    }
+
+    // If the dot is the last character
+    if (dotPosition === trimEnd - 1) {
+        --trimEnd
+    }
+
+    // trimStart and trimEnd are the same, we know that the string is all zeros
+    if (trimStart === trimEnd) {
+        return "0"; //all zeros
+    }
+
+    if (trimStart !== 0 || trimEnd !== len) {
+        numStr = numStr.slice(trimStart, trimEnd);
+    }
+
+    if (dotPosition === 0) numStr = "0" + numStr;
     return numStr;
 }
 
