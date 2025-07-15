@@ -168,6 +168,5 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("+12.12")).toEqual(12.12);
         expect(toNumber("-12.12")).toEqual(-12.12);
         expect(toNumber("-012.12")).toEqual(-12.12);
-        expect(toNumber("-012.12")).toEqual(-12.12);
     })
 });
