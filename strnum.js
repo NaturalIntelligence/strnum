@@ -3,7 +3,6 @@ const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
 // const octRegex = /^0x[a-z0-9]+/;
 // const binRegex = /0x[a-z0-9]+/;
 
- 
 const consider = {
     hex :  true,
     // oct: false,
@@ -119,11 +118,12 @@ function trimZeros(numStr){
     }
     return numStr;
 }
-
-function parse_int(numStr, base){
-    //polyfill
-    if(parseInt) return parseInt(numStr, base);
-    else if(Number.parseInt) return Number.parseInt(numStr, base);
-    else if(window && window.parseInt) return window.parseInt(numStr, base);
-    else throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
-}
+ 
+const parse_int = /** @type {(string: string, radix: 16) => number} */ ((function parse_int(){
+    if(parseInt) return parseInt
+    else if(Number.parseInt) return Number.parseInt
+    else if(window && window.parseInt) return window.parseInt
+    else return function parseInt() { 
+        throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
+    };
+})());
