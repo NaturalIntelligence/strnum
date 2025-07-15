@@ -20,9 +20,9 @@ const defaultOptions = {
 
 /**
  * @template {*} T
- * @param {T} str 
- * @param {Options} options 
- * @returns {number|T}
+ * @param {T} str - The string to convert to a number.
+ * @param {Options} [options] - Options to control the conversion behavior.
+ * @returns {number|T} - The converted number or the original value if conversion is not applicable.
  */
 export default function toNumber(str, options = {}) {
     options = Object.assign({}, defaultOptions, options);
