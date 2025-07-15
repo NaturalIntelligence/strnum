@@ -1,15 +1,31 @@
 const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
 const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
 
-const consider = {
+/**
+ * @typedef {Object} Options
+ * @property {boolean} [hex=true] - Whether to allow hexadecimal numbers (e.g., "0x1A").
+ * @property {boolean} [leadingZeros=true] - Whether to allow leading zeros in numbers.
+ * @property {RegExp} [skipLike] - A regular expression to skip certain string patterns.
+ * @property {string} [decimalPoint="."] - The character used as the decimal point.
+ * @property {boolean} [eNotation=true] - Whether to allow scientific notation (e.g., "1e10").
+ */
+
+/** @type {Options} */
+const defaultOptions = {
     hex :  true,
     leadingZeros: true,
     decimalPoint: "\.",
     eNotation: true,
 };
 
+/**
+ * @template {*} T
+ * @param {T} str 
+ * @param {Options} options 
+ * @returns {number|T}
+ */
 export default function toNumber(str, options = {}){
-    options = Object.assign({}, consider, options );
+    options = Object.assign({}, defaultOptions, options);
     if(!str || typeof str !== "string" ) return str;
     
     let trimmedStr  = str.trim();
@@ -70,6 +86,14 @@ export default function toNumber(str, options = {}){
 }
 
 const eNotationRegx = /^([-+])?(0*)(\d*(\.\d*)?[eE][-\+]?\d+)$/;
+
+/**
+ * @template {*} T
+ * @param {T} str 
+ * @param {string} trimmedStr 
+ * @param {Options} options 
+ * @returns {number|T}
+ */
 function resolveEnotation(str,trimmedStr,options){
     if(!options.eNotation) return str;
     const notation = trimmedStr.match(eNotationRegx); 
@@ -96,9 +120,8 @@ function resolveEnotation(str,trimmedStr,options){
 }
 
 /**
- * 
  * @param {string} numStr without leading zeros
- * @returns 
+ * @returns {string} numStr with trimmed ending zeros
  */
 function trimZeros(numStr){
     if(numStr && numStr.indexOf(".") !== -1){//float
@@ -111,7 +134,10 @@ function trimZeros(numStr){
     return numStr;
 }
  
-const parse_int = /** @type {(string: string, radix: 16) => number} */ ((function parse_int(){
+/**
+ * @type {(string: string, radix: 16) => number}
+ */
+const parse_int = ((function parse_int(){
     if(parseInt) return parseInt
     else if(Number.parseInt) return Number.parseInt
     else if(window && window.parseInt) return window.parseInt
