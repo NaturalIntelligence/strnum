@@ -1,15 +1,11 @@
 const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/;
 const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
-// const octRegex = /^0x[a-z0-9]+/;
-// const binRegex = /0x[a-z0-9]+/;
 
 const consider = {
     hex :  true,
-    // oct: false,
     leadingZeros: true,
     decimalPoint: "\.",
     eNotation: true,
-    //skipLike: /regex/
 };
 
 export default function toNumber(str, options = {}){
@@ -22,12 +18,8 @@ export default function toNumber(str, options = {}){
     else if(str==="0") return 0;
     else if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
-    // }else if (options.oct && octRegex.test(str)) {
-    //     return Number.parseInt(val, 8);
     }else if (trimmedStr.search(/.+[eE].+/)!== -1) { //eNotation
         return resolveEnotation(str,trimmedStr,options);
-    // }else if (options.parseBin && binRegex.test(str)) {
-    //     return Number.parseInt(val, 2);
     }else{
         //separate negative sign, leading zeros, and rest number
         const match = numRegex.exec(trimmedStr);
