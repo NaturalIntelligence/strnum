@@ -31,6 +31,7 @@ describe("Should convert all the valid numeric strings to number", () => {
     })
     it("should not parse strings with 0x embedded", () => {
         expect(toNumber("0xzz")).toEqual("0xzz");
+        expect(toNumber("0x")).toEqual("0x");
         expect(toNumber("iweraf0x123qwerqwer")).toEqual("iweraf0x123qwerqwer");
         expect(toNumber("1230x55")).toEqual("1230x55");
         expect(toNumber("JVBERi0xLjMNCiXi48")).toEqual("JVBERi0xLjMNCiXi48");
@@ -110,6 +111,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("20211201030005811824")  ).toEqual("20211201030005811824");
         expect(toNumber("20.211201030005811824")  ).toEqual("20.211201030005811824");
         expect(toNumber("0.211201030005811824")  ).toEqual("0.211201030005811824");
+        expect(toNumber("0.21120103000500000000000 ")  ).toEqual(0.211201030005);
     });
     it("scientific notation", () => {
         expect(toNumber("01.0e2"  ,  { leadingZeros :  false})).toEqual("01.0e2");
@@ -117,6 +119,8 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("01.0e2") ).toEqual(100);
         expect(toNumber("-01.0e2") ).toEqual(-100);
         expect(toNumber("1.0e2") ).toEqual(100);
+
+        expect(toNumber("1.0e2 ") ).toEqual(100);
 
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
