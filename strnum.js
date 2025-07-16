@@ -1,6 +1,3 @@
-const hexRegex = /^[-+]?0x[a-fA-F0-9]+$/u;
-const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/u;
-
 /**
  * @typedef {Object} Options
  * @property {boolean} [hex=true] - Whether to allow hexadecimal numbers (e.g., "0x1A").
@@ -19,164 +16,19 @@ const defaultOptions = {
 };
 
 /**
- * @template {*} T
- * @param {T} str - The string to convert to a number.
- * @param {Options} [options] - Options to control the conversion behavior.
- * @returns {number|T} - The converted number or the original value if conversion is not applicable.
+ * The character used for scientific notation in numbers, based on the environment.
+ * This is determined by checking if a large number can be represented in scientific notation.
+ * @type {"e"|"E"}
+ * @constant
  */
-export default function toNumber(str, options = {}) {
-    options = Object.assign({}, defaultOptions, options);
-    if (!str || typeof str !== "string") return str;
-
-    let trimmedStr = str.trim();
-
-    if (options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
-    else if (str === "0") return 0;
-    else if (options.hex && hexRegex.test(trimmedStr)) {
-        return parse_int(trimmedStr, 16);
-    } else if (trimmedStr.search(/.+[eE].+/) !== -1) { //eNotation
-        if (options.eNotation === false) return str; //skip eNotation{
-        return resolveEnotation(str, trimmedStr, options);
-    } else {
-        //separate negative sign, leading zeros, and rest number
-        const match = numRegex.exec(trimmedStr);
-        // +00.123 => [ , '+', '00', '.123', ..
-        if (match) {
-            const sign = match[1] || "";
-            const leadingZeros = match[2] || "";
-            let numTrimmedByZeros = trimZeros(match[3]); //complete num without leading zeros
-            const decimalAdjacentToLeadingZeros = sign ? // 0., -00., 000.
-                str[leadingZeros.length + 1] === "."
-                : str[leadingZeros.length] === ".";
-
-            //trim ending zeros for floating number
-            if (!options.leadingZeros //leading zeros are not allowed
-                && (leadingZeros.length > 1
-                    || (leadingZeros.length === 1 && !decimalAdjacentToLeadingZeros))) {
-                // 00, 00.3, +03.24, 03, 03.24
-                return str;
-            }
-            else {//no leading zeros or leading zeros are allowed
-                const num = Number(trimmedStr);
-                const parsedStr = String(num);
-
-                if (num === 0) return num;
-                if (parsedStr.search(/[eE]/) !== -1) { //given number is long and parsed to eNotation
-                    if (options.eNotation) return num;
-                    else return str;
-                } else if (trimmedStr.indexOf(".") !== -1) { //floating number
-                    if (parsedStr === "0") return num; //0.0
-                    else if (parsedStr === numTrimmedByZeros) return num; //0.456. 0.79000
-                    else if (parsedStr === `${sign}${numTrimmedByZeros}`) return num;
-                    else return str;
-                }
-
-                let n = leadingZeros ? numTrimmedByZeros : trimmedStr;
-                if (leadingZeros) {
-                    // -009 => -9
-                    return (n === parsedStr) || (sign + n === parsedStr) ? num : str
-                } else {
-                    // +9
-                    return (n === parsedStr) || (n === sign + parsedStr) ? num : str
-                }
-            }
-        } else { //non-numeric string
-            return str;
-        }
-    }
-}
-
-const eNotationRegx = /^([-+])?(0*)(\d*(\.\d*)?([eE])[-\+]?\d+)$/u;
+const EXP_CHAR = (function returnExpChar() {
+    const bigNumber = 1e1000;
+    const str = String(bigNumber);
+    return str.indexOf("e") === -1 ? "e" : "E";
+})()
 
 /**
- * @template {*} T
- * @param {T} str 
- * @param {string} trimmedStr 
- * @param {object} options 
- * @param {boolean} [options.leadingZeros=true]
- * @returns {number|T}
- */
-function resolveEnotation(str, trimmedStr, options) {
-    const notation = trimmedStr.match(eNotationRegx);
-    if (notation) {
-        let sign = notation[1] || "";
-        const eChar = notation[5];
-        const leadingZeros = notation[2];
-        const eAdjacentToLeadingZeros = sign ? // 0E.
-            str[leadingZeros.length + 1] === eChar
-            : str[leadingZeros.length] === eChar;
-
-        if (leadingZeros.length > 1 && eAdjacentToLeadingZeros) return str;
-        else if (leadingZeros.length === 1
-            && ((notation[3][0] === '.' && notation[3][1] === eChar) || notation[3][0] === eChar)) {
-            return Number(trimmedStr);
-        } else if (options.leadingZeros && !eAdjacentToLeadingZeros) { //accept with leading zeros
-            //remove leading 0s
-            trimmedStr = (notation[1] || "") + notation[3];
-            return Number(trimmedStr);
-        } else return str;
-    } else {
-        return str;
-    }
-}
-
-/**
- * @param {string} numStr numerical string with leading and trailing zeros
- * @returns {string} numerical string with trimmed zeros
- */
-function trimZeros(numStr) {
-    const dotPosition = numStr.indexOf(".");
-
-    // not a float number
-    if (dotPosition === -1) return numStr;
-
-    const len = numStr.length;
-    let trimStart = 0;
-    let trimEnd = len;
-
-    let i = 0;
-
-    if (dotPosition !== 0) {
-        while (i < dotPosition) {
-            if (numStr[i] !== "0") {
-                trimStart = i;
-                break;
-            }
-            i++;
-        }
-    }
-
-    i = len - 1;
-    if (dotPosition !== i) {
-        while (i >= dotPosition) {
-            if (numStr[i] !== "0") {
-                trimEnd = i + 1; //+1 to include the last non-zero digit
-                break;
-            }
-            i--
-        }
-    }
-
-    // If the dot is the last character
-    if (dotPosition === trimEnd - 1) {
-        --trimEnd
-    }
-
-    // trimStart and trimEnd are the same, we know that the string is all zeros
-    if (trimStart === trimEnd) {
-        return "0"; //all zeros
-    }
-
-    if (trimStart !== 0 || trimEnd !== len) {
-        numStr = numStr.slice(trimStart, trimEnd);
-    }
-
-    if (dotPosition === 0) numStr = "0" + numStr;
-    return numStr;
-}
-
-/**
- * @type {(string: string, radix: 16) => number}
+ * @type {(string: string, radix: 10|16) => number}
  */
 const parse_int = ((function parse_int() {
     if (parseInt) return parseInt
@@ -186,3 +38,311 @@ const parse_int = ((function parse_int() {
         throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
     };
 })());
+
+const IS_EMPTY = 0;
+const HAS_ERROR = 1 << 0;
+const IS_HEX = 1 << 1;
+const IS_FLOAT = 1 << 2;
+const HAS_WHITESPACE = 1 << 3;
+const HAS_E = 1 << 4;
+
+/**
+ * @template {*} T
+ * @param {T} str - The string to convert to a number.
+ * @param {Options} [options] - Options to control the conversion behavior.
+ * @returns {number|T} - The converted number or the original value if conversion is not applicable.
+ */
+export default function toNumber(str, options = {}) {
+    if (!str || typeof str !== "string") return str;
+
+    const analyzeResult = analyzeNumber(str, options);
+
+    if (options.skipLike !== undefined) {
+        const trimmedStr = ((analyzeResult & HAS_WHITESPACE) === HAS_WHITESPACE)
+            ? str.trim() : str;
+        if (options.skipLike.test(trimmedStr)) {
+            return str; // Skip conversion if it matches the skip pattern
+        }
+    }
+
+    if ((analyzeResult & HAS_ERROR) === HAS_ERROR) {
+        return str;
+    }
+
+    if ((analyzeResult & IS_HEX) === IS_HEX) {
+        // If the string contains 'x', it is likely a hexadecimal number.
+        return parse_int(str, 16);
+    }
+
+    if ((analyzeResult & HAS_E) === HAS_E) {
+        if (options.eNotation !== false) {
+            return Number(str);
+        }
+        return str; // If scientific notation is not allowed, return the original string
+    }
+
+    const num = Number(str);
+    const parsedStr = String(num);
+
+    if (parsedStr.indexOf(EXP_CHAR) !== -1) { //given number is long and parsed to eNotation
+        if (options.eNotation !== false) return num;
+        else return str;
+    }
+
+    if (((analyzeResult & IS_FLOAT) === IS_EMPTY) && (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER)) {
+        return str; // If the number is out of safe integer range, return the original string
+    }
+
+    if ((analyzeResult & IS_FLOAT) === IS_FLOAT) {
+        const parsedDecimalPoint = parsedStr.indexOf(".") + 1;
+
+        if ((parsedStr.length - parsedDecimalPoint) > 10) {
+            const strDecimalPoint = str.indexOf(options.decimalPoint || ".") + 1;
+
+            for (let i = 0; i < parsedStr.length; i++) {
+              if (parsedStr[parsedDecimalPoint + i] !== str[strDecimalPoint + i]) {
+                return str; // If the decimal part does not match, return the original string
+              }
+            }
+        }
+    }
+
+    return num;
+}
+
+const ERROR = -1; // error state
+const BEGIN = 0; // initial state
+const OWS = 1; // optional whitespace
+const SIGN = 2; // sign
+const LEADING_ZEROS = 3; // leading zeros
+const INT = 4; // integer partEXP
+const BEGIN_FRAC = 5; // beginning of fractional part
+const FRAC = 6; // fractional part
+const EXP = 7; // exponent part
+const TRAILING_ZEROS = 8; // trailing zeros
+const TRAILING_SPACE = 9; // trailing space
+const HEX = 10; // hexadecimal state
+
+/**
+ * @param {string} str 
+ * @param {Options} options - Options to control the parsing behavior.
+ * @returns {number}
+ */
+function analyzeNumber(str, options) {
+    let len = str.length;
+
+    let state = BEGIN;
+    let start = 0;
+    let length = 0
+    let trailingZeros = 0;
+    let i = 0;
+
+    let result = IS_EMPTY;
+
+    const ON_HEX = options.hex !== false ? HEX : ERROR;
+    const DECIMAL = options.decimalPoint || "\.";
+    const ON_E = options.eNotation !== false ? EXP : ERROR;
+    const NO_LEADING_ZEROS = options.leadingZeros === false;
+
+    while (i < len) {
+        switch (str[i]) {
+            case " ":
+                switch (state) {
+                    case BEGIN:
+                        ++i;
+                        result |= HAS_WHITESPACE;
+                        state = OWS;
+                        continue;
+                    case OWS:
+                    case TRAILING_SPACE:
+                        ++i;
+                        continue;
+                    case INT:
+                    case FRAC:
+                        ++i;
+                        result |= HAS_WHITESPACE;
+                        state = TRAILING_SPACE;
+                        continue;
+                    default:
+                        return result | HAS_ERROR;
+                }
+            case "+":
+            case "-":
+                switch (state) {
+                    case BEGIN:
+                    case OWS:
+                    case SIGN:
+                        state = LEADING_ZEROS;
+                        start = ++i;
+                        break;
+                    case EXP:
+                        if (length === 0) {
+                            start = ++i;
+                            ++length;
+                            continue;
+                        }
+                    default:
+                        return result | HAS_ERROR;
+                }
+                break;
+            case "0":
+                switch (state) {
+                    case BEGIN:
+                        state = LEADING_ZEROS;
+                        start = ++i;
+                        length = 1;
+                        break;
+                    case LEADING_ZEROS:
+                        if (NO_LEADING_ZEROS && length === 1) {
+                            return result | HAS_ERROR;
+                        }
+                        ++length;
+                        ++start;
+                        ++i;
+                        continue;
+                    case OWS:
+                    case SIGN:
+                        ++length;
+                        ++start;
+                        ++i
+                        state = LEADING_ZEROS;
+                        continue;
+                    case BEGIN_FRAC:
+                        result |= IS_FLOAT;
+                        state = FRAC;
+                    case FRAC:
+                        trailingZeros++;
+                    case INT:
+                        ++i;
+                        continue;
+                    default:
+                        return result | HAS_ERROR;
+                }
+                break;
+            case "x":
+                switch (state) {
+                    case LEADING_ZEROS:
+                        if (length !== 1) {
+                            return result | HAS_ERROR;
+                        }
+                        start = ++i;
+                        length = 0;
+                        result |= IS_HEX;
+                        state = ON_HEX;
+                        continue;
+                    default:
+                        return result | HAS_ERROR;
+                }
+            case "1":
+            case "2":
+            case "3":
+            case "4":
+            case "5":
+            case "6":
+            case "7":
+            case "8":
+            case "9":
+                switch (state) {
+                    case LEADING_ZEROS:
+                        if (NO_LEADING_ZEROS && length === 1) {
+                            return result | HAS_ERROR;
+                        }
+                    case BEGIN:
+                    case OWS:
+                    case SIGN:
+                        state = INT;
+                    case HEX:
+                    case INT:
+                    case EXP:
+                        ++i;
+                        ++length;
+                        break;
+                    case BEGIN_FRAC:
+                        result |= IS_FLOAT;
+                        state = FRAC;
+                    case FRAC:
+                        trailingZeros = 0;
+                        ++length;
+                        ++i;
+                        break;
+                    default:
+                        return result | HAS_ERROR;
+                }
+                break;
+            case "a":
+            case "b":
+            case "c":
+            case "d":
+            case "f":
+            case "A":
+            case "B":
+            case "C":
+            case "D":
+            case "F":
+                switch (state) {
+                    case HEX:
+                        ++i;
+                        ++length;
+                        break;
+                    default:
+                        return result | HAS_ERROR;
+                }
+                break;
+            case DECIMAL:
+                switch (state) {
+                    case BEGIN:
+                    case LEADING_ZEROS:
+                    case OWS:
+                    case SIGN:
+                    case INT:
+                        start = ++i;
+                        length = 0;
+                        state = BEGIN_FRAC;
+                        break;
+                    default:
+                        return result | HAS_ERROR;
+                }
+                break;
+            case "e":
+            case "E":
+                switch (state) {
+                    case LEADING_ZEROS:
+                        if (length > 1) {
+                            return result | HAS_ERROR;
+                        }
+                    case INT:
+                    case BEGIN_FRAC:
+                    case FRAC:
+                        length = 0;
+                        start = ++i;
+                        result |= HAS_E;
+                        state = ON_E;
+                        break;
+                    case HEX:
+                        ++i;
+                        ++length;
+                        break;
+                    default:
+                        return result | HAS_ERROR;
+                }
+                break;
+            default:
+                return result | HAS_ERROR;
+        }
+    }
+
+    switch (state) {
+        case LEADING_ZEROS:
+        case INT:
+        case BEGIN_FRAC:
+        case FRAC:
+        case TRAILING_ZEROS:
+        case TRAILING_SPACE:
+            return result;
+        case EXP:
+        case HEX:
+            return length === 0 ? result | HAS_ERROR : result;
+        default:
+            return result | HAS_ERROR;
+    }
+}
