@@ -25,22 +25,22 @@ const EXP_CHAR = (function returnExpChar() {
     const bigNumber = 1e1000;
     const str = String(bigNumber);
     return str.indexOf("e") === -1 ? "e" : "E";
-})()
+})();
 
 /**
  * @type {(string: string, radix: 10|16) => number}
  */
 const parse_int = ((function parse_int() {
-    if (parseInt) return parseInt
-    else if (Number.parseInt) return Number.parseInt
-    else if (window && window.parseInt) return window.parseInt
+    if (parseInt) return parseInt;
+    else if (Number.parseInt) return Number.parseInt;
+    else if (window && window.parseInt) return window.parseInt;
     else return function parseInt() {
         throw new Error("parseInt, Number.parseInt, window.parseInt are not supported")
     };
 })());
 
-const IS_EMPTY = 0;
-const HAS_ERROR = 1 << 0;
+const ERROR = 0;
+const IS_EMPTY = 1 << 0;
 const IS_HEX = 1 << 1;
 const IS_FLOAT = 1 << 2;
 const HAS_WHITESPACE = 1 << 3;
@@ -59,18 +59,18 @@ export default function toNumber(str, options = {}) {
 
     if (options.skipLike !== undefined) {
         const trimmedStr = ((analyzeResult & HAS_WHITESPACE) === HAS_WHITESPACE)
-            ? str.trim() : str;
+            ? str.trim()
+            : str;
         if (options.skipLike.test(trimmedStr)) {
-            return str; // Skip conversion if it matches the skip pattern
+            return str;
         }
     }
 
-    if ((analyzeResult & HAS_ERROR) === HAS_ERROR) {
+    if (analyzeResult === ERROR) {
         return str;
     }
 
     if ((analyzeResult & IS_HEX) === IS_HEX) {
-        // If the string contains 'x', it is likely a hexadecimal number.
         return parse_int(str, 16);
     }
 
@@ -78,19 +78,20 @@ export default function toNumber(str, options = {}) {
         if (options.eNotation !== false) {
             return Number(str);
         }
-        return str; // If scientific notation is not allowed, return the original string
+        return str;
     }
 
     const num = Number(str);
     const parsedStr = String(num);
 
-    if (parsedStr.indexOf(EXP_CHAR) !== -1) { //given number is long and parsed to eNotation
+    if (parsedStr.indexOf(EXP_CHAR) !== -1) {
         if (options.eNotation !== false) return num;
         else return str;
     }
 
-    if (((analyzeResult & IS_FLOAT) === IS_EMPTY) && (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER)) {
-        return str; // If the number is out of safe integer range, return the original string
+    // If the number is out of safe integer range, return the original string
+    if (((analyzeResult & IS_FLOAT) !== IS_FLOAT) && (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER)) {
+        return str;
     }
 
     if ((analyzeResult & IS_FLOAT) === IS_FLOAT) {
@@ -100,9 +101,9 @@ export default function toNumber(str, options = {}) {
             const strDecimalPoint = str.indexOf(options.decimalPoint || ".") + 1;
 
             for (let i = 0; i < parsedStr.length; i++) {
-              if (parsedStr[parsedDecimalPoint + i] !== str[strDecimalPoint + i]) {
-                return str; // If the decimal part does not match, return the original string
-              }
+                if (parsedStr[parsedDecimalPoint + i] !== str[strDecimalPoint + i]) {
+                    return str;
+                }
             }
         }
     }
@@ -110,61 +111,61 @@ export default function toNumber(str, options = {}) {
     return num;
 }
 
-const ERROR = -1; // error state
-const BEGIN = 0; // initial state
-const OWS = 1; // optional whitespace
-const SIGN = 2; // sign
-const LEADING_ZEROS = 3; // leading zeros
-const INT = 4; // integer partEXP
-const BEGIN_FRAC = 5; // beginning of fractional part
-const FRAC = 6; // fractional part
-const EXP = 7; // exponent part
-const TRAILING_ZEROS = 8; // trailing zeros
-const TRAILING_SPACE = 9; // trailing space
-const HEX = 10; // hexadecimal state
+const INVALID = ERROR;
+const BEGIN = 1;
+const OWS = 2;
+const SIGN = 3;
+const LEADING_ZEROS = 4;
+const INT = 5;
+const BEGIN_FRAC = 6;
+const FRAC = 7;
+const EXP = 8;
+const TRAILING_ZEROS = 9;
+const TRAILING_SPACE = 10;
+const HEX = 11;
 
 /**
- * @param {string} str 
+ * @param {string} str - The string to analyze.
  * @param {Options} options - Options to control the parsing behavior.
- * @returns {number}
+ * @returns {number} - A bitmask representing the analysis result of the string.
  */
 function analyzeNumber(str, options) {
     let len = str.length;
 
     let state = BEGIN;
     let start = 0;
-    let length = 0
+    let length = 0;
     let trailingZeros = 0;
-    let i = 0;
+    let pos = 0;
 
     let result = IS_EMPTY;
 
-    const ON_HEX = options.hex !== false ? HEX : ERROR;
+    const ON_HEX = options.hex !== false ? HEX : INVALID;
     const DECIMAL = options.decimalPoint || "\.";
-    const ON_E = options.eNotation !== false ? EXP : ERROR;
+    const ON_E = options.eNotation !== false ? EXP : INVALID;
     const NO_LEADING_ZEROS = options.leadingZeros === false;
 
-    while (i < len) {
-        switch (str[i]) {
+    while (pos < len) {
+        switch (str[pos]) {
             case " ":
                 switch (state) {
                     case BEGIN:
-                        ++i;
+                        ++pos;
                         result |= HAS_WHITESPACE;
                         state = OWS;
                         continue;
                     case OWS:
                     case TRAILING_SPACE:
-                        ++i;
+                        ++pos;
                         continue;
                     case INT:
                     case FRAC:
-                        ++i;
+                        ++pos;
                         result |= HAS_WHITESPACE;
                         state = TRAILING_SPACE;
                         continue;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
             case "+":
             case "-":
@@ -173,38 +174,38 @@ function analyzeNumber(str, options) {
                     case OWS:
                     case SIGN:
                         state = LEADING_ZEROS;
-                        start = ++i;
+                        start = ++pos;
                         break;
                     case EXP:
                         if (length === 0) {
-                            start = ++i;
+                            start = ++pos;
                             ++length;
                             continue;
                         }
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
                 break;
             case "0":
                 switch (state) {
                     case BEGIN:
                         state = LEADING_ZEROS;
-                        start = ++i;
+                        start = ++pos;
                         length = 1;
                         break;
                     case LEADING_ZEROS:
                         if (NO_LEADING_ZEROS && length === 1) {
-                            return result | HAS_ERROR;
+                            return ERROR;
                         }
                         ++length;
                         ++start;
-                        ++i;
+                        ++pos;
                         continue;
                     case OWS:
                     case SIGN:
                         ++length;
                         ++start;
-                        ++i
+                        ++pos;
                         state = LEADING_ZEROS;
                         continue;
                     case BEGIN_FRAC:
@@ -213,25 +214,25 @@ function analyzeNumber(str, options) {
                     case FRAC:
                         trailingZeros++;
                     case INT:
-                        ++i;
+                        ++pos;
                         continue;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
                 break;
             case "x":
                 switch (state) {
                     case LEADING_ZEROS:
                         if (length !== 1) {
-                            return result | HAS_ERROR;
+                            return ERROR;
                         }
-                        start = ++i;
+                        start = ++pos;
                         length = 0;
                         result |= IS_HEX;
                         state = ON_HEX;
                         continue;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
             case "1":
             case "2":
@@ -245,7 +246,7 @@ function analyzeNumber(str, options) {
                 switch (state) {
                     case LEADING_ZEROS:
                         if (NO_LEADING_ZEROS && length === 1) {
-                            return result | HAS_ERROR;
+                            return ERROR;
                         }
                     case BEGIN:
                     case OWS:
@@ -254,7 +255,7 @@ function analyzeNumber(str, options) {
                     case HEX:
                     case INT:
                     case EXP:
-                        ++i;
+                        ++pos;
                         ++length;
                         break;
                     case BEGIN_FRAC:
@@ -263,10 +264,10 @@ function analyzeNumber(str, options) {
                     case FRAC:
                         trailingZeros = 0;
                         ++length;
-                        ++i;
+                        ++pos;
                         break;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
                 break;
             case "a":
@@ -281,11 +282,11 @@ function analyzeNumber(str, options) {
             case "F":
                 switch (state) {
                     case HEX:
-                        ++i;
+                        ++pos;
                         ++length;
                         break;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
                 break;
             case DECIMAL:
@@ -295,12 +296,12 @@ function analyzeNumber(str, options) {
                     case OWS:
                     case SIGN:
                     case INT:
-                        start = ++i;
+                        start = ++pos;
                         length = 0;
                         state = BEGIN_FRAC;
                         break;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
                 break;
             case "e":
@@ -308,26 +309,26 @@ function analyzeNumber(str, options) {
                 switch (state) {
                     case LEADING_ZEROS:
                         if (length > 1) {
-                            return result | HAS_ERROR;
+                            return ERROR;
                         }
                     case INT:
                     case BEGIN_FRAC:
                     case FRAC:
                         length = 0;
-                        start = ++i;
+                        start = ++pos;
                         result |= HAS_E;
                         state = ON_E;
                         break;
                     case HEX:
-                        ++i;
+                        ++pos;
                         ++length;
                         break;
                     default:
-                        return result | HAS_ERROR;
+                        return ERROR;
                 }
                 break;
             default:
-                return result | HAS_ERROR;
+                return ERROR;
         }
     }
 
@@ -341,8 +342,8 @@ function analyzeNumber(str, options) {
             return result;
         case EXP:
         case HEX:
-            return length === 0 ? result | HAS_ERROR : result;
+            return length === 0 ? ERROR : result;
         default:
-            return result | HAS_ERROR;
+            return ERROR;
     }
 }
