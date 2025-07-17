@@ -24,6 +24,7 @@ describe("Should convert all the valid numeric strings to number", () => {
     it("should parse hexadecimal values", () => {
         expect(toNumber("0x2f")).toEqual(47);
         expect(toNumber("-0x2f")).toEqual(-47);
+        expect(toNumber("0x0", { hex :  true})).toEqual(0);
         expect(toNumber("0x2f", { hex :  true})).toEqual(47);
         expect(toNumber("-0x2f", { hex :  true})).toEqual(-47);
         expect(toNumber("0x2f", { hex :  false})).toEqual("0x2f");
@@ -121,6 +122,8 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("1.0e2") ).toEqual(100);
 
         expect(toNumber("1.0e2 ") ).toEqual(100);
+        expect(toNumber("1.0e02") ).toEqual(100);
+        expect(toNumber("1.0e002") ).toEqual(100);
 
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
@@ -131,6 +134,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("1e-2")).toEqual(0.01);
         expect(toNumber("1e+2")).toEqual(100);
         expect(toNumber("1.e+2")).toEqual(100);
+        expect(toNumber("1e.2")).toEqual("1e.2");
     });
 
     it("scientific notation with upper E", () => {

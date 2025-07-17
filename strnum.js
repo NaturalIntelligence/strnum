@@ -125,20 +125,17 @@ const END = /** @type {const} */ (512);
 const OWS = /** @type {const} */ (384); // WHITESPACE | BEGIN Optional whitespace
 const TRAILING_WHITESPACE = /** @type {const} */ (640); // WHITESPACE | END
 
+const BEGIN_INTEGER_DIGITS = /** @type {const} */ (258); // INTEGER | BEGIN
 const BEGIN_FLOAT_DIGITS = /** @type {const} */ (260); // FLOAT | BEGIN
-const BEGIN_HEX_DIGITS = /** @type {const} */ (264); // HEX | BEGIN
+const BEGIN_HEX = /** @type {const} */ (264); // HEX | BEGIN
 const BEGIN_EXPONENT = /** @type {const} */ (272); // EXPONENT_DIGITS | BEGIN
 const BEGIN_ZEROS = /** @type {const} */ (320); // BEGIN | ZEROS
 
-const INTEGER_DIGITS = /** @type {const} */ (2); // INTEGER
-const FLOAT_DIGITS = /** @type {const} */ (4); // FLOAT
-const HEX_DIGITS = /** @type {const} */ (8); // HEX
-const EXPONENT_DIGITS = /** @type {const} */ (16); // EXPONENT
 const ZERO_DIGITS = /** @type {const} */ (64); // ZEROS
 
 const INVALID_ZEROS = /** @type {const} */ (65); // ZEROS | INVALID
 
-/** @typedef {typeof INVALID|typeof BEGIN|typeof OWS|typeof ZERO_DIGITS|typeof BEGIN_ZEROS|typeof INVALID_ZEROS|typeof INTEGER|typeof BEGIN_FLOAT_DIGITS|typeof FLOAT_DIGITS|typeof BEGIN_EXPONENT|typeof EXPONENT_DIGITS|typeof TRAILING_WHITESPACE|typeof HEX_DIGITS|typeof BEGIN_HEX_DIGITS} State */
+/** @typedef {typeof INVALID|typeof BEGIN|typeof OWS|typeof ZERO_DIGITS|typeof BEGIN_ZEROS|typeof INVALID_ZEROS|typeof INTEGER|typeof BEGIN_FLOAT_DIGITS|typeof FLOAT|typeof BEGIN_EXPONENT|typeof EXPONENT|typeof TRAILING_WHITESPACE|typeof HEX|typeof BEGIN_HEX} State */
 
 /**
  * @param {string} str - The string to analyze.
@@ -150,34 +147,30 @@ function analyzeNumber(str, options) {
 
     /** @type {State} */
     let state = BEGIN;
-    let start = 0;
     let length = 0;
-    let trailingZeros = 0;
-    let pos = 0;
+    let pos = -1;
 
     let result = VALID;
 
     const DECIMAL = options.decimalPoint || "\.";
-    const ON_HEX = options.hex !== false ? BEGIN_HEX_DIGITS : INVALID;
+    const ON_HEX = options.hex !== false ? BEGIN_HEX : INVALID;
     const ON_E = options.eNotation !== false ? BEGIN_EXPONENT : INVALID;
     const ON_LEADING_ZEROS = options.leadingZeros === false ? INVALID_ZEROS : BEGIN_ZEROS;
 
-    while (pos < len) {
+    while (++pos < len) {
         switch (str[pos]) {
             case " ":
                 switch (state) {
                     case BEGIN:
-                        ++pos;
                         result |= WHITESPACE;
                         state = OWS;
-                        continue;
                     case OWS:
                     case TRAILING_WHITESPACE:
-                        ++pos;
                         continue;
-                    case INTEGER_DIGITS:
-                    case FLOAT_DIGITS:
-                        ++pos;
+                    case HEX:
+                    case EXPONENT:
+                    case INTEGER:
+                    case FLOAT:
                         result |= WHITESPACE;
                         state = TRAILING_WHITESPACE;
                         continue;
@@ -191,21 +184,21 @@ function analyzeNumber(str, options) {
                     case OWS:
                         result |= SIGN;
                         state = ZERO_DIGITS;
-                        start = ++pos;
-                        break;
+                        continue;
                     case BEGIN_EXPONENT:
-                        if (length === 0) {
-                            start = ++pos;
-                            ++length;
-                            state = EXPONENT_DIGITS;
-                            continue;
-                        }
+                        state = EXPONENT;
+                        continue;
                     default:
                         return INVALID;
                 }
-                break;
             case "0":
                 switch (state) {
+                    case FLOAT:
+                        ++length;
+                    case EXPONENT:
+                    case HEX:
+                    case INTEGER:
+                        continue;
                     case INVALID_ZEROS:
                         return INVALID;
                     case OWS:
@@ -214,29 +207,28 @@ function analyzeNumber(str, options) {
                         state = ON_LEADING_ZEROS;
                     case BEGIN_ZEROS:
                         ++length;
-                        ++start;
-                        ++pos;
+                        continue;
+                    case BEGIN_EXPONENT:
+                        result |= EXPONENT;
+                        state = EXPONENT;
                         continue;
                     case BEGIN_FLOAT_DIGITS:
-                        state = FLOAT_DIGITS;
-                    case FLOAT_DIGITS:
-                        trailingZeros++;
-                    case INTEGER_DIGITS:
-                        ++pos;
+                        state = FLOAT;
+                        continue;
+                    case BEGIN_HEX:
+                        result |= HEX;
+                        state = HEX;
                         continue;
                     default:
                         return INVALID;
                 }
             case "x":
                 switch (state) {
-                    case INVALID_ZEROS:
                     case BEGIN_ZEROS:
                         if (length !== 1) {
                             return INVALID;
                         }
-                        start = ++pos;
-                        length = 0;
-                        result |= HEX;
+                    case INVALID_ZEROS:
                         state = ON_HEX;
                         continue;
                     default:
@@ -252,36 +244,33 @@ function analyzeNumber(str, options) {
             case "8":
             case "9":
                 switch (state) {
+                    case FLOAT:
+                        length = 0;
+                    case EXPONENT:
+                    case HEX:
+                    case INTEGER:
+                        continue;
                     case ZERO_DIGITS:
                     case BEGIN_ZEROS:
                     case BEGIN:
                     case OWS:
                         state = INTEGER;
-                    case INTEGER_DIGITS:
-                    case EXPONENT_DIGITS:
-                    case HEX_DIGITS:
-                        ++pos;
-                        ++length;
-                        break;
-                    case BEGIN_HEX_DIGITS:
+                        continue;
+                    case BEGIN_HEX:
                         result |= HEX;
-                        state = HEX_DIGITS;
+                        state = HEX;
+                        continue;
                     case BEGIN_EXPONENT:
-                        ++pos;
-                        ++length;
-                        state = EXPONENT_DIGITS;
+                        result |= EXPONENT;
+                        state = EXPONENT;
+                        continue;
                     case BEGIN_FLOAT_DIGITS:
                         result |= FLOAT;
-                        state = FLOAT_DIGITS;
-                    case FLOAT_DIGITS:
-                        trailingZeros = 0;
-                        ++length;
-                        ++pos;
-                        break;
+                        state = FLOAT;
+                        continue;
                     default:
                         return INVALID;
                 }
-                break;
             case "a":
             case "b":
             case "c":
@@ -293,16 +282,14 @@ function analyzeNumber(str, options) {
             case "D":
             case "F":
                 switch (state) {
-                    case BEGIN_HEX_DIGITS:
-                        state = HEX_DIGITS;
-                    case HEX_DIGITS:
-                        ++pos;
-                        ++length;
-                        break;
+                    case BEGIN_HEX:
+                        result |= HEX;
+                        state = HEX;
+                    case HEX:
+                        continue;
                     default:
                         return INVALID;
                 }
-                break;
             case DECIMAL:
                 switch (state) {
                     case BEGIN:
@@ -310,38 +297,30 @@ function analyzeNumber(str, options) {
                     case INVALID_ZEROS:
                     case BEGIN_ZEROS:
                     case OWS:
-                    case INTEGER_DIGITS:
-                        start = ++pos;
-                        length = 0;
+                    case INTEGER:
                         state = BEGIN_FLOAT_DIGITS;
-                        break;
+                        continue;
                     default:
                         return INVALID;
                 }
-                break;
             case "e":
             case "E":
                 switch (state) {
+                    case HEX:
+                        continue;
                     case BEGIN_ZEROS:
                         if (length > 1) {
                             return INVALID;
                         }
-                    case INTEGER_DIGITS:
+                    case INTEGER:
                     case BEGIN_FLOAT_DIGITS:
-                    case FLOAT_DIGITS:
-                        length = 0;
-                        start = ++pos;
+                    case FLOAT:
                         result |= EXPONENT;
                         state = ON_E;
-                        break;
-                    case HEX_DIGITS:
-                        ++pos;
-                        ++length;
-                        break;
+                        continue;
                     default:
                         return INVALID;
                 }
-                break;
             default:
                 return INVALID;
         }
@@ -350,15 +329,16 @@ function analyzeNumber(str, options) {
     switch (state) {
         case INVALID_ZEROS:
         case BEGIN_ZEROS:
-        case INTEGER_DIGITS:
+        case INTEGER:
         case BEGIN_FLOAT_DIGITS:
-        case FLOAT_DIGITS:
+        case FLOAT:
         case TRAILING_WHITESPACE:
+        case EXPONENT:
+        case HEX:
             return result;
-        case EXPONENT_DIGITS:
-        case HEX_DIGITS:
-            return length === 0 ? INVALID : result;
         default:
             return INVALID;
     }
 }
+
+console.log(toNumber('1.0e2 '))
