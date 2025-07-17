@@ -13,11 +13,7 @@
  * @type {"e"|"E"}
  * @constant
  */
-const EXP_CHAR = (function returnExpChar() {
-    const bigNumber = 1e1000;
-    const str = String(bigNumber);
-    return str.indexOf("e") === -1 ? "e" : "E";
-})();
+const EXP_CHAR = String(1e100).indexOf("e") !== -1 ? "e" : "E";
 
 /**
  * @type {(string: string, radix: 10|16) => number}
@@ -42,6 +38,10 @@ export default function toNumber(str, options = {}) {
 
     const analyzeResult = analyzeNumber(str, options);
 
+    if (analyzeResult === INVALID) {
+        return str;
+    }
+
     if (options.skipLike !== undefined) {
         const trimmedStr = ((analyzeResult & WHITESPACE) === WHITESPACE)
             ? str.trim()
@@ -49,10 +49,6 @@ export default function toNumber(str, options = {}) {
         if (options.skipLike.test(trimmedStr)) {
             return str;
         }
-    }
-
-    if (analyzeResult === INVALID) {
-        return str;
     }
 
     if ((analyzeResult & HEX) === HEX) {
@@ -175,8 +171,8 @@ function analyzeNumber(str, options) {
                         result |= WHITESPACE;
                         state = OWS;
                         continue;
-                    case TRAILING_WHITESPACE:
                     case OWS:
+                    case TRAILING_WHITESPACE:
                         ++pos;
                         continue;
                     case INTEGER_DIGITS:
@@ -231,7 +227,6 @@ function analyzeNumber(str, options) {
                     default:
                         return INVALID;
                 }
-                break;
             case "x":
                 switch (state) {
                     case INVALID_ZEROS:
