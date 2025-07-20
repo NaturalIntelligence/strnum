@@ -131,11 +131,13 @@ const BEGIN_HEX = /** @type {const} */ (264); // HEX | BEGIN
 const BEGIN_EXPONENT = /** @type {const} */ (272); // EXPONENT_DIGITS | BEGIN
 const BEGIN_ZEROS = /** @type {const} */ (320); // BEGIN | ZEROS
 
+const EXPONENT_SIGN = /** @type {const} */ (48); // EXPONENT | SIGN
+
 const ZERO_DIGITS = /** @type {const} */ (64); // ZEROS
 
 const INVALID_ZEROS = /** @type {const} */ (65); // ZEROS | INVALID
 
-/** @typedef {typeof INVALID|typeof BEGIN|typeof OWS|typeof ZERO_DIGITS|typeof BEGIN_ZEROS|typeof INVALID_ZEROS|typeof INTEGER|typeof BEGIN_FLOAT_DIGITS|typeof FLOAT|typeof BEGIN_EXPONENT|typeof EXPONENT|typeof TRAILING_WHITESPACE|typeof HEX|typeof BEGIN_HEX} State */
+/** @typedef {typeof INVALID|typeof EXPONENT_SIGN|typeof BEGIN|typeof OWS|typeof ZERO_DIGITS|typeof BEGIN_ZEROS|typeof INVALID_ZEROS|typeof INTEGER|typeof BEGIN_FLOAT_DIGITS|typeof FLOAT|typeof BEGIN_EXPONENT|typeof EXPONENT|typeof TRAILING_WHITESPACE|typeof HEX|typeof BEGIN_HEX} State */
 
 /**
  * @param {string} str - The string to analyze.
@@ -184,7 +186,9 @@ function analyzeNumber(str, options) {
                     case OWS:
                         result |= SIGN;
                         state = ZERO_DIGITS;
+                        continue;
                     case BEGIN_EXPONENT:
+                        state = EXPONENT_SIGN;
                         continue;
                     default:
                         return INVALID;
@@ -242,6 +246,7 @@ function analyzeNumber(str, options) {
                         state = HEX;
                         continue;
                     case BEGIN_EXPONENT:
+                    case EXPONENT_SIGN:
                         result |= EXPONENT;
                         state = EXPONENT;
                         continue;
