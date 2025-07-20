@@ -13,7 +13,16 @@
  * @type {"e"|"E"}
  * @constant
  */
-const EXP_CHAR = String(1e100).indexOf("e") !== -1 ? "e" : "E";
+const EXP_CHAR = function () {
+  const bigNumberAsString = String(1e100)
+  if (bigNumberAsString.indexOf("e") !== -1) {
+    return "e";
+  } else if (bigNumberAsString.indexOf("E") !== -1) {
+    return "E";
+  } else {
+    throw new Error("Cannot determine scientific notation character");
+  }
+}();
 
 /**
  * @type {(string: string, radix: 10|16) => number}
@@ -279,10 +288,10 @@ function analyzeNumber(str, options) {
             case DECIMAL:
                 switch (state) {
                     case BEGIN:
+                    case OWS:
                     case ZERO_DIGITS:
                     case INVALID_ZEROS:
                     case BEGIN_ZEROS:
-                    case OWS:
                     case INTEGER:
                         state = BEGIN_FLOAT_DIGITS;
                         continue;
