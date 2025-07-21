@@ -4,7 +4,7 @@ import toNumber from "./strnum.js"
 const bench = new Bench({ name: 'strnum benchmark', time: 100 })
 
 function toNumberBenchmark(str, options) {
-	bench.add(`${str}${options ? JSON.stringify(options) :''}`, () => {
+	bench.add(`${str}${options ? ', ' + JSON.stringify(options) : ''}`, () => {
 		toNumber(str, options)
 	})
 }
@@ -140,6 +140,19 @@ toNumberBenchmark("+1212");
 toNumberBenchmark("+12.12");
 toNumberBenchmark("-12.12");
 toNumberBenchmark("-012.12");
+
+toNumberBenchmark("Infinity");
+toNumberBenchmark("-Infinity");
+toNumberBenchmark("+Infinity");
+toNumberBenchmark("Infinity", { infinity: true });
+toNumberBenchmark("-Infinity", { infinity: true });
+toNumberBenchmark("+Infinity", { infinity: true });
+toNumberBenchmark("Infinity", { infinity: false });
+toNumberBenchmark("-Infinity", { infinity: false });
+toNumberBenchmark("+Infinity", { infinity: false });
+toNumberBenchmark("  Infinity  ");
+toNumberBenchmark("  -Infinity  ");
+toNumberBenchmark("  +Infinity  ");
 
 await bench.run()
 

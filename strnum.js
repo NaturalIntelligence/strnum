@@ -5,6 +5,7 @@
  * @property {boolean} [binary=false] - Whether to allow binary numbers (e.g., "0b1010").
  * @property {boolean} [bigint=false] - Whether to allow BigInt numbers (e.g., "123n").
  * @property {boolean} [leadingZeros=true] - Whether to allow leading zeros in numbers.
+ * @property {boolean} [infinity=false] - Whether to allow "Infinity" and "-Infinity".
  * @property {RegExp} [skipLike] - A regular expression to skip certain string patterns.
  * @property {string} [decimalPoint="."] - The character used as the decimal point.
  * @property {boolean} [eNotation=true] - Whether to allow scientific notation (e.g., "1e10").
@@ -86,6 +87,10 @@ export default function toNumber(str, options = {}) {
         return str;
     }
 
+    if ((analyzeResult & INFINITY) === INFINITY) {
+        return +str;
+    }
+
     const num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : +str;
     const parsedStr = '' + num;
 
@@ -147,7 +152,6 @@ const SIGN = /** @type {const} */  assertBitmask(512, 1 << 9);
 const EXPONENT_INDICATOR = /** @type {const} */ assertBitmask(1024, 1 << 10); // 'e' or 'E'
 const BIGINT_LITERAL_SUFFIX = /** @type {const} */ assertBitmask(2048, 1 << 11); // 'n' for BigInt
 
-
 // Positional constants
 const BEGIN = /** @type {const} */ assertBitmask(2048, 1 << 11);
 const END = /** @type {const} */ assertBitmask(4096, 1 << 12);
@@ -168,6 +172,9 @@ const EXPONENT_INTEGER = /** @type {const} */ assertBitmask(1088, EXPONENT_INDIC
 const FIRST_DIGIT_ZERO = /** @type {const} */ assertBitmask(2304, ZERO | BEGIN);
 const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(6400, ZERO | BEGIN | END);
 const LEADING_ZEROS = /** @type {const} */ assertBitmask(2308, ZERO | BEGIN | DECIMAL);
+
+const INFINITY = /** @type {const} */ assertBitmask(8192, 1 << 13);
+
 /**
  * @typedef {typeof NUMBER |
  *   typeof NOT_A_NUMBER |
@@ -193,7 +200,8 @@ const LEADING_ZEROS = /** @type {const} */ assertBitmask(2308, ZERO | BEGIN | DE
  *   typeof BEGIN_EXPONENT |
  *   typeof FIRST_DIGIT_ZERO |
  *   typeof FIRST_DIGIT_ZERO_NOT_LEADING |
- *   LEADING_ZEROS |
+ *   typeof LEADING_ZEROS |
+ *   typeof INFINITY |
  *   typeof SIGN |
  *   typeof EXPONENT_INDICATOR |
  *   typeof EXPONENT_SIGN |
@@ -236,6 +244,7 @@ export function analyzeNumber(str, options) {
     const ON_BINARY = options.binary === true ? BEGIN_BINARY : NOT_A_NUMBER;
     const ON_OCTAL = options.octal === true ? BEGIN_OCTAL : NOT_A_NUMBER;
     const ON_LEADING_ZEROS = options.leadingZeros === false ? FIRST_DIGIT_ZERO_NOT_LEADING : FIRST_DIGIT_ZERO;
+    const ON_INFINITY = options.infinity === true ? INFINITY : NOT_A_NUMBER;
 
     while (++pos < len) {
         switch (str[pos]) {
@@ -424,6 +433,20 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
+            case "I":
+                if (
+                    str[++pos] === "n" &&
+                    str[++pos] === "f" &&
+                    str[++pos] === "i" &&
+                    str[++pos] === "n" &&
+                    str[++pos] === "i" &&
+                    str[++pos] === "t" &&
+                    str[++pos] === "y"
+                ) {
+                    result |= INFINITY;
+                    state = ON_INFINITY;
+                }
+                break;
             // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
             case " ":
             case "\t":
@@ -461,6 +484,7 @@ export function analyzeNumber(str, options) {
                     case EXPONENT_INTEGER:
                     case BIGINT_LITERAL_SUFFIX:
                     case FLOAT:
+                    case INFINITY:
                         result |= WHITESPACE;
                         state = TRAILING_WHITESPACE;
                     case LEADING_WHITESPACE:
@@ -488,6 +512,7 @@ export function analyzeNumber(str, options) {
         case LEADING_ZEROS:
         case BEGIN_FRAC_DIGITS:
         case TRAILING_WHITESPACE:
+        case INFINITY:
             return result;
         default:
             return NOT_A_NUMBER;

@@ -183,4 +183,18 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-12.12")).toEqual(-12.12);
         expect(toNumber("-012.12")).toEqual(-12.12);
     })
+    it("Infinity", () => {
+        expect(toNumber("Infinity")).toEqual("Infinity");
+        expect(toNumber("-Infinity")).toEqual("-Infinity");
+        expect(toNumber("+Infinity")).toEqual("+Infinity");
+        expect(toNumber("Infinity", { infinity: true })).toEqual(Infinity);
+        expect(toNumber("-Infinity", { infinity: true })).toEqual(-Infinity);
+        expect(toNumber("+Infinity", { infinity: true })).toEqual(+Infinity);
+        expect(toNumber("Infinity", { infinity: false })).toEqual("Infinity");
+        expect(toNumber("-Infinity", { infinity: false })).toEqual("-Infinity");
+        expect(toNumber("+Infinity", { infinity: false })).toEqual("+Infinity");
+        expect(toNumber("  Infinity  ")).toEqual("  Infinity  ");
+        expect(toNumber("  -Infinity  ")).toEqual("  -Infinity  ");
+        expect(toNumber("  +Infinity  ")).toEqual("  +Infinity  ");
+    })
 });
