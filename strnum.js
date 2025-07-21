@@ -17,7 +17,7 @@
  * @constant
  */
 const EXP_CHAR = function () {
-    const bigNumberAsString = String(1e100)
+    const bigNumberAsString = '' + 1e100;
     if (bigNumberAsString.indexOf("e") !== -1) {
         return "e";
     } else if (bigNumberAsString.indexOf("E") !== -1) {
@@ -81,13 +81,13 @@ export default function toNumber(str, options = {}) {
 
     if ((analyzeResult & EXPONENT_INDICATOR) === EXPONENT_INDICATOR) {
         if (options.eNotation !== false) {
-            return Number(str);
+            return +str;
         }
         return str;
     }
 
-    const num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : Number(str);
-    const parsedStr = String(num);
+    const num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : +str;
+    const parsedStr = '' + num;
 
     if (parsedStr.indexOf(EXP_CHAR) !== -1) {
         if (options.eNotation !== false) return num;
@@ -239,85 +239,6 @@ export function analyzeNumber(str, options) {
 
     while (++pos < len) {
         switch (str[pos]) {
-            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-            case " ":
-            case "\t":
-            case "\v":
-            case "\f":
-            case "\r":
-            case "\n":
-            case "\ufeff": // Unicode line separator
-            // https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
-            case "\u00A0": // Non-breaking space
-            case "\u1680": // Ogham space mark
-            case "\u2000": // En quad
-            case "\u2001": // Em quad
-            case "\u2002": // En space
-            case "\u2003": // Em space
-            case "\u2004": // Three-per-em space
-            case "\u2005": // Four-per-em space
-            case "\u2006": // Six-per-em space
-            case "\u2007": // Figure space
-            case "\u2008": // Punctuation space
-            case "\u2009": // Thin space
-            case "\u200A": // Hair space
-            case "\u202F": // Narrow no-break space
-            case "\u205F": // Medium mathematical space
-            case "\u3000": // Ideographic space
-                switch (state) {
-                    case BEGIN:
-                        result |= WHITESPACE;
-                        state = LEADING_WHITESPACE;
-                        continue;
-                    case BINARY:
-                    case OCTAL:
-                    case DECIMAL:
-                    case HEX:
-                    case EXPONENT_INTEGER:
-                    case BIGINT_LITERAL_SUFFIX:
-                    case FLOAT:
-                        result |= WHITESPACE;
-                        state = TRAILING_WHITESPACE;
-                    case LEADING_WHITESPACE:
-                    case TRAILING_WHITESPACE:
-                        continue;
-                    default:
-                        return NOT_A_NUMBER;
-                }
-            case "+":
-            case "-":
-                switch (state) {
-                    case BEGIN:
-                    case LEADING_WHITESPACE:
-                        result |= SIGN;
-                        state = SIGN;
-                        continue;
-                    case BEGIN_EXPONENT:
-                        state = EXPONENT_SIGN;
-                        continue;
-                    default:
-                        return NOT_A_NUMBER;
-                }
-            case "o":
-            case "O":
-                switch (state) {
-                    case FIRST_DIGIT_ZERO:
-                    case FIRST_DIGIT_ZERO_NOT_LEADING:
-                        state = ON_OCTAL;
-                        continue;
-                    default:
-                        return NOT_A_NUMBER;
-                }
-            case "x":
-            case "X":
-                switch (state) {
-                    case FIRST_DIGIT_ZERO:
-                    case FIRST_DIGIT_ZERO_NOT_LEADING:
-                        state = ON_HEX;
-                        continue;
-                    default:
-                        return NOT_A_NUMBER;
-                }
             case "0":
                 switch (state) {
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
@@ -412,16 +333,17 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case DECIMAL_POINT:
+            case "b":
+            case "B":
                 switch (state) {
-                    case BEGIN:
-                    case LEADING_WHITESPACE:
-                    case SIGN:
+                    case BEGIN_HEX:
+                        result |= HEX;
+                        state = HEX;
+                    case HEX:
+                        continue;
                     case FIRST_DIGIT_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
-                    case LEADING_ZEROS:
-                    case DECIMAL:
-                        state = BEGIN_FRAC_DIGITS;
+                        state = ON_BINARY;
                         continue;
                     default:
                         return NOT_A_NUMBER;
@@ -445,17 +367,50 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "b":
-            case "B":
+            case "+":
+            case "-":
                 switch (state) {
-                    case BEGIN_HEX:
-                        result |= HEX;
-                        state = HEX;
-                    case HEX:
+                    case BEGIN:
+                    case LEADING_WHITESPACE:
+                        result |= SIGN;
+                        state = SIGN;
                         continue;
+                    case BEGIN_EXPONENT:
+                        state = EXPONENT_SIGN;
+                        continue;
+                    default:
+                        return NOT_A_NUMBER;
+                }
+            case DECIMAL_POINT:
+                switch (state) {
+                    case BEGIN:
+                    case LEADING_WHITESPACE:
+                    case SIGN:
                     case FIRST_DIGIT_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
-                        state = ON_BINARY;
+                    case LEADING_ZEROS:
+                    case DECIMAL:
+                        state = BEGIN_FRAC_DIGITS;
+                        continue;
+                    default:
+                        return NOT_A_NUMBER;
+                }
+            case "x":
+            case "X":
+                switch (state) {
+                    case FIRST_DIGIT_ZERO:
+                    case FIRST_DIGIT_ZERO_NOT_LEADING:
+                        state = ON_HEX;
+                        continue;
+                    default:
+                        return NOT_A_NUMBER;
+                }
+            case "o":
+            case "O":
+                switch (state) {
+                    case FIRST_DIGIT_ZERO:
+                    case FIRST_DIGIT_ZERO_NOT_LEADING:
+                        state = ON_OCTAL;
                         continue;
                     default:
                         return NOT_A_NUMBER;
@@ -465,6 +420,51 @@ export function analyzeNumber(str, options) {
                     case DECIMAL:
                         result |= BIGINT;
                         state = ON_BIGINT;
+                        continue;
+                    default:
+                        return NOT_A_NUMBER;
+                }
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
+            case " ":
+            case "\t":
+            case "\v":
+            case "\f":
+            case "\r":
+            case "\n":
+            case "\ufeff": // Unicode line separator
+            // https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
+            case "\u00A0": // Non-breaking space
+            case "\u1680": // Ogham space mark
+            case "\u2000": // En quad
+            case "\u2001": // Em quad
+            case "\u2002": // En space
+            case "\u2003": // Em space
+            case "\u2004": // Three-per-em space
+            case "\u2005": // Four-per-em space
+            case "\u2006": // Six-per-em space
+            case "\u2007": // Figure space
+            case "\u2008": // Punctuation space
+            case "\u2009": // Thin space
+            case "\u200A": // Hair space
+            case "\u202F": // Narrow no-break space
+            case "\u205F": // Medium mathematical space
+            case "\u3000": // Ideographic space
+                switch (state) {
+                    case BEGIN:
+                        result |= WHITESPACE;
+                        state = LEADING_WHITESPACE;
+                        continue;
+                    case BINARY:
+                    case OCTAL:
+                    case DECIMAL:
+                    case HEX:
+                    case EXPONENT_INTEGER:
+                    case BIGINT_LITERAL_SUFFIX:
+                    case FLOAT:
+                        result |= WHITESPACE;
+                        state = TRAILING_WHITESPACE;
+                    case LEADING_WHITESPACE:
+                    case TRAILING_WHITESPACE:
                         continue;
                     default:
                         return NOT_A_NUMBER;
