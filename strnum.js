@@ -1,6 +1,9 @@
 /**
  * @typedef {Object} Options
  * @property {boolean} [hex=true] - Whether to allow hexadecimal numbers (e.g., "0x1A").
+ * @property {boolean} [octal=false] - Whether to allow octal numbers (e.g., "0o17").
+ * @property {boolean} [binary=false] - Whether to allow binary numbers (e.g., "0b1010").
+ * @property {boolean} [bigint=false] - Whether to allow BigInt numbers (e.g., "123n").
  * @property {boolean} [leadingZeros=true] - Whether to allow leading zeros in numbers.
  * @property {RegExp} [skipLike] - A regular expression to skip certain string patterns.
  * @property {string} [decimalPoint="."] - The character used as the decimal point.
@@ -24,7 +27,7 @@ const EXP_CHAR = function () {
     }
 }();
 
-/** @type {(string: string, radix: 10|16) => number} */
+/** @type {(string: string, radix: 2|8|10|16) => number} */
 const parse_int = ((function parse_int() {
     if (parseInt) return parseInt;
     else if (Number.parseInt) return Number.parseInt;
@@ -59,7 +62,21 @@ export default function toNumber(str, options = {}) {
     }
 
     if ((analyzeResult & HEX) === HEX) {
-        return parse_int(str, 16);
+        return parse_int(str, HEX);
+    }
+
+    if ((analyzeResult & OCTAL) === OCTAL) {
+        if ((analyzeResult & WHITESPACE) === WHITESPACE) {
+            return parse_int(str.trim().slice(2), OCTAL);
+        }
+        return parse_int(str.slice(2), OCTAL);
+    }
+
+    if ((analyzeResult & BINARY) === BINARY) {
+        if ((analyzeResult & WHITESPACE) === WHITESPACE) {
+            return parse_int(str.trim().slice(2), BINARY);
+        }
+        return parse_int(str.slice(2), BINARY);
     }
 
     if ((analyzeResult & EXPONENT_INDICATOR) === EXPONENT_INDICATOR) {
@@ -215,8 +232,9 @@ export function analyzeNumber(str, options) {
     const DECIMAL_POINT = options.decimalPoint || "\.";
     const ON_HEX = options.hex !== false ? BEGIN_HEX : NOT_A_NUMBER;
     const ON_E = options.eNotation !== false ? BEGIN_EXPONENT : NOT_A_NUMBER;
-    const ON_BINARY = BEGIN_BINARY;
-    const ON_OCTAL = BEGIN_OCTAL;
+    const ON_BIGINT = options.bigint === true ? BIGINT_LITERAL_SUFFIX : NOT_A_NUMBER;
+    const ON_BINARY = options.binary === true ? BEGIN_BINARY : NOT_A_NUMBER;
+    const ON_OCTAL = options.octal === true ? BEGIN_OCTAL : NOT_A_NUMBER;
     const ON_LEADING_ZEROS = options.leadingZeros === false ? FIRST_DIGIT_ZERO_NOT_LEADING : FIRST_DIGIT_ZERO;
 
     while (++pos < len) {
@@ -445,8 +463,8 @@ export function analyzeNumber(str, options) {
             case "n":
                 switch (state) {
                     case DECIMAL:
-                        result |= BIGINT
-                        state = BIGINT_LITERAL_SUFFIX
+                        result |= BIGINT;
+                        state = ON_BIGINT;
                         continue;
                     default:
                         return NOT_A_NUMBER;
