@@ -28,4 +28,6 @@ declare module "strnum" {
          */
         eNotation?: boolean;
     };
+
+    export function analyzeNumber(str: string, options?: Options): number;
 }
