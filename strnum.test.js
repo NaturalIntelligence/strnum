@@ -196,5 +196,8 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("  Infinity  ")).toEqual("  Infinity  ");
         expect(toNumber("  -Infinity  ")).toEqual("  -Infinity  ");
         expect(toNumber("  +Infinity  ")).toEqual("  +Infinity  ");
+        expect(toNumber("  Infinity  ", { infinity: true })).toEqual(Infinity);
+        expect(toNumber("  -Infinity  ", { infinity: true })).toEqual(-Infinity);
+        expect(toNumber("  +Infinity  ", { infinity: true })).toEqual(Infinity);
     })
 });

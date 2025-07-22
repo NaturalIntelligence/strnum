@@ -12,7 +12,7 @@ declare module "strnum" {
      * @returns {number} - A bitmask representing the analysis result of the string.
      */
     export function analyzeNumber(str: string, options: Options): number;
-    export type State = typeof NUMBER | typeof NOT_A_NUMBER | typeof BINARY | typeof DECIMAL | typeof OCTAL | typeof HEX | typeof FLOAT | typeof INTEGER | typeof BIGINT | typeof BIGINT_LITERAL_SUFFIX | typeof ZERO | typeof WHITESPACE | typeof BEGIN | typeof END | typeof LEADING_WHITESPACE | typeof TRAILING_WHITESPACE | typeof BEGIN_INTEGER_DIGITS | typeof BEGIN_FRAC_DIGITS | typeof BEGIN_BINARY | typeof BEGIN_HEX | typeof BEGIN_OCTAL | typeof BEGIN_EXPONENT | typeof FIRST_DIGIT_ZERO | typeof FIRST_DIGIT_ZERO_NOT_LEADING | 2308 | typeof SIGN | typeof EXPONENT_INDICATOR | typeof EXPONENT_SIGN | typeof EXPONENT_INTEGER;
+    export type State = typeof NUMBER | typeof NOT_A_NUMBER | typeof BINARY | typeof DECIMAL | typeof OCTAL | typeof HEX | typeof FLOAT | typeof INTEGER | typeof BIGINT | typeof BIGINT_LITERAL_SUFFIX | typeof ZERO | typeof WHITESPACE | typeof BEGIN | typeof END | typeof LEADING_WHITESPACE | typeof TRAILING_WHITESPACE | typeof BEGIN_INTEGER_DIGITS | typeof BEGIN_FRAC_DIGITS | typeof BEGIN_BINARY | typeof BEGIN_HEX | typeof BEGIN_OCTAL | typeof BEGIN_EXPONENT | typeof FIRST_DIGIT_ZERO | typeof FIRST_DIGIT_ZERO_NOT_LEADING | typeof LEADING_ZEROS | typeof INFINITY | typeof SIGN | typeof EXPONENT_INDICATOR | typeof EXPONENT_SIGN | typeof EXPONENT_INTEGER;
     export type Options = {
         /**
          * - Whether to allow hexadecimal numbers (e.g., "0x1A").
@@ -34,6 +34,10 @@ declare module "strnum" {
          * - Whether to allow leading zeros in numbers.
          */
         leadingZeros?: boolean;
+        /**
+         * - Whether to allow "Infinity" and "-Infinity".
+         */
+        infinity?: boolean;
         /**
          * - A regular expression to skip certain string patterns.
          */
@@ -71,6 +75,8 @@ declare module "strnum" {
     const BEGIN_EXPONENT: 3072;
     const FIRST_DIGIT_ZERO: 2304;
     const FIRST_DIGIT_ZERO_NOT_LEADING: 6400;
+    const LEADING_ZEROS: 2308;
+    const INFINITY: 8192;
     const SIGN: 512;
     const EXPONENT_INDICATOR: 1024;
     const EXPONENT_SIGN: 1536;

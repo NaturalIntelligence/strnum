@@ -434,19 +434,26 @@ export function analyzeNumber(str, options) {
                         return NOT_A_NUMBER;
                 }
             case "I":
-                if (
-                    str[++pos] === "n" &&
-                    str[++pos] === "f" &&
-                    str[++pos] === "i" &&
-                    str[++pos] === "n" &&
-                    str[++pos] === "i" &&
-                    str[++pos] === "t" &&
-                    str[++pos] === "y"
-                ) {
-                    result |= INFINITY;
-                    state = ON_INFINITY;
+                switch (state) {
+                    case BEGIN:
+                    case LEADING_WHITESPACE:
+                    case SIGN:
+                        if (
+                            str[++pos] === "n" &&
+                            str[++pos] === "f" &&
+                            str[++pos] === "i" &&
+                            str[++pos] === "n" &&
+                            str[++pos] === "i" &&
+                            str[++pos] === "t" &&
+                            str[++pos] === "y"
+                        ) {
+                            result |= INFINITY;
+                            state = ON_INFINITY;
+                            continue;
+                        }
+                    default:
+                        return NOT_A_NUMBER;
                 }
-                break;
             // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
             case " ":
             case "\t":
