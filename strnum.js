@@ -68,16 +68,30 @@ export default function toNumber(str, options = {}) {
 
     if ((analyzeResult & OCTAL) === OCTAL) {
         if ((analyzeResult & WHITESPACE) === WHITESPACE) {
+            const trimmedStr = str.trim();
+            if (analyzeResult & SIGN) {
+                return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + trimmedStr.slice(3), OCTAL);
+            }
             return parse_int(str.trim().slice(2), OCTAL);
         }
-        return parse_int(str.slice(2), OCTAL);
+        if (analyzeResult & SIGN) {
+            return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + str.slice(3), OCTAL);
+        }
+        return parse_int(str.trim().slice(2), OCTAL);
     }
 
     if ((analyzeResult & BINARY) === BINARY) {
         if ((analyzeResult & WHITESPACE) === WHITESPACE) {
+            const trimmedStr = str.trim();
+            if (analyzeResult & SIGN) {
+                return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + trimmedStr.slice(3), BINARY);
+            }
             return parse_int(str.trim().slice(2), BINARY);
         }
-        return parse_int(str.slice(2), BINARY);
+        if (analyzeResult & SIGN) {
+            return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + str.slice(3), BINARY);
+        }
+        return parse_int(str.trim().slice(2), BINARY);
     }
 
     if ((analyzeResult & EXPONENT_INDICATOR) === EXPONENT_INDICATOR) {
@@ -88,7 +102,7 @@ export default function toNumber(str, options = {}) {
     }
 
     if ((analyzeResult & INFINITY) === INFINITY) {
-        return +str;
+        return analyzeResult & NEGATIVE ? -Infinity : Infinity;
     }
 
     const num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : +str;
@@ -174,6 +188,7 @@ const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(6400, ZE
 const LEADING_ZEROS = /** @type {const} */ assertBitmask(2308, ZERO | BEGIN | DECIMAL);
 
 const INFINITY = /** @type {const} */ assertBitmask(8192, 1 << 13);
+const NEGATIVE = /** @type {const} */ assertBitmask(16384, 1 << 14);
 
 /**
  * @typedef {typeof NUMBER |
@@ -259,6 +274,7 @@ export function analyzeNumber(str, options) {
                     case BEGIN:
                     case SIGN:
                         state = ON_LEADING_ZEROS;
+                        continue;
                     case FLOAT:
                         ++length;
                     case BEGIN_FRAC_DIGITS:
@@ -376,8 +392,16 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "+":
             case "-":
+                switch (state) {
+                    case BEGIN:
+                    case LEADING_WHITESPACE:
+                        result |= SIGN;
+                        result |= NEGATIVE;
+                        state = SIGN;
+                        continue;
+                }
+            case "+":
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
