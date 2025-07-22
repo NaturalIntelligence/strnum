@@ -500,6 +500,8 @@ export function analyzeNumber(str, options) {
             case "\u2008": // Punctuation space
             case "\u2009": // Thin space
             case "\u200A": // Hair space
+            case "\u2028": // Line separator
+            case "\u2029": // Paragraph separator
             case "\u202F": // Narrow no-break space
             case "\u205F": // Medium mathematical space
             case "\u3000": // Ideographic space
