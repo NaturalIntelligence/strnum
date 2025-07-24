@@ -306,6 +306,14 @@ export function analyzeNumber(str, options) {
         switch (str[pos]) {
             case "0":
                 switch (state) {
+                    case FLOAT:
+                        ++length;
+                    case DECIMAL:
+                    case HEX:
+                    case BINARY:
+                    case OCTAL:
+                    case BEGIN_FRAC_DIGITS:
+                        continue;
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                         return NOT_A_NUMBER;
                     case BEGIN_ZERO:
@@ -316,14 +324,6 @@ export function analyzeNumber(str, options) {
                     case SIGN:
                         state = ON_LEADING_ZEROS;
                         continue;
-                    case FLOAT:
-                        ++length;
-                    case BEGIN_FRAC_DIGITS:
-                    case BINARY:
-                    case OCTAL:
-                    case DECIMAL:
-                    case HEX:
-                        continue;
                     case BEGIN_BINARY:
                         result |= BINARY;
                         state = BINARY;
@@ -331,10 +331,11 @@ export function analyzeNumber(str, options) {
                 }
             case "1":
                 switch (state) {
+                    case BINARY:
+                        continue;
                     case BEGIN_BINARY:
                         result |= BINARY;
                         state = BINARY;
-                    case BINARY:
                         continue;
                 }
             case "2":
@@ -344,10 +345,11 @@ export function analyzeNumber(str, options) {
             case "6":
             case "7":
                 switch (state) {
+                    case OCTAL:
+                        continue;
                     case BEGIN_OCTAL:
                         result |= OCTAL;
                         state = OCTAL;
-                    case OCTAL:
                         continue;
                 }
             case "8":
@@ -372,7 +374,6 @@ export function analyzeNumber(str, options) {
                         continue;
                     case BEGIN_EXPONENT:
                     case EXPONENT_SIGN:
-                        result |= EXPONENT_DECIMAL;
                         state = EXPONENT_DECIMAL;
                         continue;
                     case BEGIN_FRAC_DIGITS:
@@ -391,10 +392,11 @@ export function analyzeNumber(str, options) {
             case "D":
             case "F":
                 switch (state) {
+                    case HEX:
+                        continue;
                     case BEGIN_HEX:
                         result |= HEX;
                         state = HEX;
-                    case HEX:
                         continue;
                     default:
                         return NOT_A_NUMBER;
@@ -402,10 +404,11 @@ export function analyzeNumber(str, options) {
             case "b":
             case "B":
                 switch (state) {
+                    case HEX:
+                        continue;
                     case BEGIN_HEX:
                         result |= HEX;
                         state = HEX;
-                    case HEX:
                         continue;
                     case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
@@ -417,6 +420,8 @@ export function analyzeNumber(str, options) {
             case "e":
             case "E":
                 switch (state) {
+                    case HEX:
+                        continue;
                     case BEGIN_HEX:
                         result |= HEX;
                         state = HEX;
@@ -428,7 +433,6 @@ export function analyzeNumber(str, options) {
                     case FLOAT:
                         result |= EXPONENT_INDICATOR;
                         state = ON_E;
-                    case HEX:
                         continue;
                     default:
                         return NOT_A_NUMBER;
@@ -441,6 +445,11 @@ export function analyzeNumber(str, options) {
                         result |= NEGATIVE;
                         state = SIGN;
                         continue;
+                    case BEGIN_EXPONENT:
+                        state = EXPONENT_SIGN;
+                        continue;
+                    default:
+                        return NOT_A_NUMBER;
                 }
             case "+":
                 switch (state) {
@@ -547,6 +556,9 @@ export function analyzeNumber(str, options) {
             case "\u205F": // Medium mathematical space
             case "\u3000": // Ideographic space
                 switch (state) {
+                    case LEADING_WHITESPACE:
+                    case TRAILING_WHITESPACE:
+                        continue;
                     case BEGIN:
                         result |= WHITESPACE;
                         state = LEADING_WHITESPACE;
@@ -561,8 +573,6 @@ export function analyzeNumber(str, options) {
                     case INFINITY:
                         result |= WHITESPACE;
                         state = TRAILING_WHITESPACE;
-                    case LEADING_WHITESPACE:
-                    case TRAILING_WHITESPACE:
                         continue;
                     default:
                         return NOT_A_NUMBER;
