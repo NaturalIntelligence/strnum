@@ -224,7 +224,7 @@ const BEGIN_BINARY =                 /** @type {const} */ assertBitmask(8194, BE
 
 const BEGIN_EXPONENT =               /** @type {const} */ assertBitmask(12288, EXPONENT_INDICATOR | BEGIN);
 const EXPONENT_SIGN =                /** @type {const} */ assertBitmask(5120, EXPONENT_INDICATOR | SIGN);
-const EXPONENT_INTEGER =             /** @type {const} */ assertBitmask(4160, EXPONENT_INDICATOR | INTEGER);
+const EXPONENT_DECIMAL =             /** @type {const} */ assertBitmask(4100, EXPONENT_INDICATOR | DECIMAL);
 
 const BEGIN_ZERO =                   /** @type {const} */ assertBitmask(10240, BEGIN | ZERO);
 const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(26624, ZERO | BEGIN | END);
@@ -261,7 +261,7 @@ const REMOVE_TYPE_HINT =             /** @type {const} */ assertBitmask(10, BINA
  *   typeof SIGN |
  *   typeof EXPONENT_INDICATOR |
  *   typeof EXPONENT_SIGN |
- *   typeof EXPONENT_INTEGER
+ *   typeof EXPONENT_DECIMAL
  * } State
  */
 
@@ -357,7 +357,7 @@ export function analyzeNumber(str, options) {
                         length = 0;
                     case DECIMAL:
                     case HEX:
-                    case EXPONENT_INTEGER:
+                    case EXPONENT_DECIMAL:
                         continue;
                     case SIGN:
                     case BEGIN_ZERO:
@@ -372,8 +372,8 @@ export function analyzeNumber(str, options) {
                         continue;
                     case BEGIN_EXPONENT:
                     case EXPONENT_SIGN:
-                        result |= EXPONENT_INTEGER;
-                        state = EXPONENT_INTEGER;
+                        result |= EXPONENT_DECIMAL;
+                        state = EXPONENT_DECIMAL;
                         continue;
                     case BEGIN_FRAC_DIGITS:
                         result |= FLOAT;
@@ -555,7 +555,7 @@ export function analyzeNumber(str, options) {
                     case OCTAL:
                     case DECIMAL:
                     case HEX:
-                    case EXPONENT_INTEGER:
+                    case EXPONENT_DECIMAL:
                     case BIGINT:
                     case FLOAT:
                     case INFINITY:
@@ -577,13 +577,12 @@ export function analyzeNumber(str, options) {
         case FIRST_DIGIT_ZERO_NOT_LEADING:
         case LEADING_ZEROS:
             result |= ZERO;
-        case EXPONENT_INTEGER:
+        case EXPONENT_DECIMAL:
         case BINARY:
         case OCTAL:
         case DECIMAL:
         case HEX:
         case FLOAT:
-        case LEADING_ZEROS:
         case BIGINT:
         case BEGIN_FRAC_DIGITS:
         case TRAILING_WHITESPACE:
