@@ -57,7 +57,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  false})).toEqual("000000000000000000000000017717");
         expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  true})).toEqual(17717);
         expect(toNumber("020211201030005811824")  ).toEqual("020211201030005811824");
-        expect(toNumber("0420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
+        expect(toNumber("0420926189200190257681175017717", { safeInteger: false })  ).toEqual(4.209261892001902e+29);
     })
     it("invalid floating number", () => {
         expect(toNumber("20.21.030")  ).toEqual("20.21.030");
@@ -128,7 +128,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
         
-        expect(toNumber("420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
+        expect(toNumber("420926189200190257681175017717", { safeInteger: false })  ).toEqual(4.209261892001902e+29);
         expect(toNumber("420926189200190257681175017717" , { eNotation: false} )).toEqual("420926189200190257681175017717");
         
         expect(toNumber("1e-2")).toEqual(0.01);

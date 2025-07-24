@@ -5,6 +5,7 @@
  * @property {boolean} [binary=false] - Whether to allow binary numbers (e.g., "0b1010").
  * @property {boolean} [bigint=false] - Whether to allow BigInt numbers (e.g., "123n").
  * @property {boolean} [leadingZeros=true] - Whether to allow leading zeros in numbers (e.g., "000123").
+ * @property {boolean} [safeInteger=true] - Whether to check if the number is a safe integer.
  * @property {boolean} [infinity=false] - Whether to allow "Infinity" and "-Infinity".
  * @property {RegExp} [skipLike] - A regular expression to skip certain string patterns.
  * @property {boolean} [eNotation=true] - Whether to allow scientific notation (e.g., "1e10").
@@ -70,7 +71,6 @@ export default function toNumber(str, options = {}) {
     }
 
     let trimmedStr;
-
     if (options.skipLike !== undefined) {
         trimmedStr = ((analyzeResult & WHITESPACE) === WHITESPACE)
             ? str.trim()
@@ -105,46 +105,45 @@ export default function toNumber(str, options = {}) {
         if (analyzeResult & NEGATIVE) {
             num = -num;
         }
-        return num;
     } else {
-        num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : +str;
+        num = +str;
     }
 
     if ((analyzeResult & EXPONENT_INDICATOR) === EXPONENT_INDICATOR) {
-        if (options.eNotation !== false) {
-            return +str;
-        }
-        return str;
-    }
-
-    const parsedStr = '' + num;
-
-    if (parsedStr.indexOf(EXP_CHAR) !== -1) {
-        if (options.eNotation !== false) return num;
-        else return str;
+        return num;
     }
 
     // If the number is out of safe integer range, return the original string
-    if (((analyzeResult & FLOAT) !== FLOAT) && Number.isSafeInteger(num) === false) {
-        return str;
-    }
+    if (((analyzeResult & FLOAT) !== FLOAT)) {
+        if (options.safeInteger !== false && Number.isSafeInteger(num) === false) {
+            return str;
+        }
 
-    if ((analyzeResult & FLOAT) === FLOAT) {
+        if (options.eNotation === false && ('' + num).indexOf(EXP_CHAR) !== -1) {
+            // If the number is in scientific notation, return the original string
+            return str;
+        }
+
+        return num;
+    } else {
         if (options.ieee754 === true) {
             return num;
         }
+
+        const parsedStr = '' + num;
         const parsedDecimalPoint = parsedStr.indexOf(".") + 1;
+        const parsedStrLength = parsedStr.length;
 
         // If the parsed number has fewer than 14 digits after the decimal point,
         // we can safely return it as a number.
-        if ((parsedStr.length - parsedDecimalPoint) < 14) {
+        if ((parsedStrLength - parsedDecimalPoint) < 14) {
             return num;
         }
 
         const strDecimalPoint = str.indexOf(".") + 1;
 
         let i = 0;
-        const parsedFracLength = parsedStr.length - parsedDecimalPoint;
+        const parsedFracLength = parsedStrLength - parsedDecimalPoint;
         for (; i < parsedFracLength; i++) {
             if (parsedStr[parsedDecimalPoint + i] !== str[strDecimalPoint + i]) {
                 return str;
@@ -188,9 +187,8 @@ export default function toNumber(str, options = {}) {
                     return str;
             }
         }
+        return num;
     }
-
-    return num;
 }
 
 const NUMBER =                       /** @type {const} */ 0b00000000000000000;
