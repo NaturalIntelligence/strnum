@@ -63,7 +63,6 @@ export default function toNumber(str, options = {}) {
     const analyzeResult = analyzeNumber(str, options);
 
     if ((analyzeResult & NOT_A_NUMBER) === NOT_A_NUMBER) {
-
         if (options.NaN === true) {
             return NaN;
         }
@@ -85,25 +84,30 @@ export default function toNumber(str, options = {}) {
         return 0;
     }
 
-    if ((analyzeResult & HEX) === HEX) {
-        return parse_int(str, HEX);
+    if ((analyzeResult & INFINITY) === INFINITY) {
+        return analyzeResult & NEGATIVE ? -Infinity : Infinity;
     }
 
-    if ((analyzeResult & REMOVE_TYPE_HINT) !== 0) {
-        const BASE = /** @type {2|8} */ (analyzeResult & OCTAL || analyzeResult & BINARY);
-        trimmedStr = trimmedStr || ((analyzeResult & WHITESPACE) === WHITESPACE)
-            ? str.trim()
-            : str;
-        if ((analyzeResult & WHITESPACE) === WHITESPACE) {
-            if (analyzeResult & SIGN) {
-                return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + trimmedStr.slice(3), BASE);
+    let num;
+    if ((analyzeResult & SIGN) === 0) {
+        num = +str;
+    } else if ((analyzeResult & HEX) === HEX) {
+        num = parse_int(str, 16);
+    } else if ((analyzeResult & REMOVE_TYPE_HINT) !== 0) {
+        if (trimmedStr === undefined) {
+            if ((analyzeResult & WHITESPACE) === WHITESPACE) {
+                trimmedStr = str.trim();
+            } else {
+                trimmedStr = str;
             }
-            return parse_int(trimmedStr.slice(2), BASE);
         }
-        if (analyzeResult & SIGN) {
-            return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + str.slice(3), BASE);
+        num = +trimmedStr.slice(1);
+        if (analyzeResult & NEGATIVE) {
+            num = -num;
         }
-        return parse_int(trimmedStr.slice(2), BASE);
+        return num;
+    } else {
+        num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : +str;
     }
 
     if ((analyzeResult & EXPONENT_INDICATOR) === EXPONENT_INDICATOR) {
@@ -113,11 +117,6 @@ export default function toNumber(str, options = {}) {
         return str;
     }
 
-    if ((analyzeResult & INFINITY) === INFINITY) {
-        return analyzeResult & NEGATIVE ? -Infinity : Infinity;
-    }
-
-    const num = (analyzeResult & INTEGER) === INTEGER ? parse_int(str, 10) : +str;
     const parsedStr = '' + num;
 
     if (parsedStr.indexOf(EXP_CHAR) !== -1) {
@@ -135,6 +134,12 @@ export default function toNumber(str, options = {}) {
             return num;
         }
         const parsedDecimalPoint = parsedStr.indexOf(".") + 1;
+
+        // If the parsed number has fewer than 14 digits after the decimal point,
+        // we can safely return it as a number.
+        if ((parsedStr.length - parsedDecimalPoint) < 14) {
+            return num;
+        }
 
         const strDecimalPoint = str.indexOf(".") + 1;
 
