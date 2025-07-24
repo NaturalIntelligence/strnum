@@ -10,9 +10,6 @@
  * @property {RegExp} [skipLike] - A regular expression to skip certain string patterns.
  * @property {boolean} [eNotation=true] - Whether to allow scientific notation (e.g., "1e10").
  * @property {boolean} [empty=false] - Whether to treat empty strings or strings with whitespace as zero (e.g., " ").
- * @property {boolean} [NaN=false] - Whether to return NaN for non-numeric values, (e.g., "abc" => NaN).
- * @property {boolean} [boolean=false] - Whether to convert boolean values to numbers (true to 1, false to 0).
- * @property {boolean} [null=false] - Whether to convert null to 0.
  * @property {boolean} [ieee754=false] - Whether to force IEEE 754 compliance for floating-point numbers (e.g. "1234567890.1234567890" => 1234567890.1234567).
  */
 
@@ -50,23 +47,13 @@ const parse_int = ((function parse_int() {
  * @returns {number|T} - The converted number or the original value if conversion is not applicable.
  */
 export default function toNumber(str, options = {}) {
-    if (typeof str !== "string") {
-        if (options.boolean === true) {
-            if (str === true) return 1;
-            else if (str === false) return 0;
-        }
-        if (options.null === true) {
-            if (str === null) return 0;
-        }
+    if (!str || typeof str !== "string") {
         return str;
     }
 
     const analyzeResult = analyzeNumber(str, options);
 
     if ((analyzeResult & NOT_A_NUMBER) === NOT_A_NUMBER) {
-        if (options.NaN === true) {
-            return NaN;
-        }
         return str;
     }
 
@@ -303,7 +290,6 @@ export function analyzeNumber(str, options) {
     const ON_OCTAL = options.octal === true ? BEGIN_OCTAL : NOT_A_NUMBER;
     const ON_LEADING_ZEROS = options.leadingZeros === false ? FIRST_DIGIT_ZERO_NOT_LEADING : BEGIN_ZERO;
     const ON_INFINITY = options.infinity === true ? INFINITY : NOT_A_NUMBER;
-    const ON_EMPTY = options.empty === true ? ZERO : NOT_A_NUMBER;
 
     while (++pos < len) {
         switch (str[pos]) {
@@ -600,10 +586,6 @@ export function analyzeNumber(str, options) {
         case BEGIN_FRAC_DIGITS:
         case TRAILING_WHITESPACE:
         case INFINITY:
-            return result;
-        case BEGIN:
-        case LEADING_WHITESPACE:
-            result |= ON_EMPTY;
             return result;
         default:
             return NOT_A_NUMBER;
