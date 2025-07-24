@@ -4,11 +4,15 @@
  * @property {boolean} [octal=false] - Whether to allow octal numbers (e.g., "0o17").
  * @property {boolean} [binary=false] - Whether to allow binary numbers (e.g., "0b1010").
  * @property {boolean} [bigint=false] - Whether to allow BigInt numbers (e.g., "123n").
- * @property {boolean} [leadingZeros=true] - Whether to allow leading zeros in numbers.
+ * @property {boolean} [leadingZeros=true] - Whether to allow leading zeros in numbers (e.g., "000123").
  * @property {boolean} [infinity=false] - Whether to allow "Infinity" and "-Infinity".
  * @property {RegExp} [skipLike] - A regular expression to skip certain string patterns.
- * @property {string} [decimalPoint="."] - The character used as the decimal point.
  * @property {boolean} [eNotation=true] - Whether to allow scientific notation (e.g., "1e10").
+ * @property {boolean} [empty=false] - Whether to treat empty strings or strings with whitespace as zero (e.g., " ").
+ * @property {boolean} [NaN=false] - Whether to return NaN for non-numeric values, (e.g., "abc" => NaN).
+ * @property {boolean} [boolean=false] - Whether to convert boolean values to numbers (true to 1, false to 0).
+ * @property {boolean} [null=false] - Whether to convert null to 0.
+ * @property {boolean} [ieee754=false] - Whether to force IEEE 754 compliance for floating-point numbers (e.g. "1234567890.1234567890" => 1234567890.1234567).
  */
 
 /**
@@ -45,16 +49,31 @@ const parse_int = ((function parse_int() {
  * @returns {number|T} - The converted number or the original value if conversion is not applicable.
  */
 export default function toNumber(str, options = {}) {
-    if (!str || typeof str !== "string") return str;
-
-    const analyzeResult = analyzeNumber(str, options);
-
-    if (analyzeResult === NOT_A_NUMBER) {
+    if (typeof str !== "string") {
+        if (options.boolean === true) {
+            if (str === true) return 1;
+            else if (str === false) return 0;
+        }
+        if (options.null === true) {
+            if (str === null) return 0;
+        }
         return str;
     }
 
+    const analyzeResult = analyzeNumber(str, options);
+
+    if ((analyzeResult & NOT_A_NUMBER) === NOT_A_NUMBER) {
+
+        if (options.NaN === true) {
+            return NaN;
+        }
+        return str;
+    }
+
+    let trimmedStr;
+
     if (options.skipLike !== undefined) {
-        const trimmedStr = ((analyzeResult & WHITESPACE) === WHITESPACE)
+        trimmedStr = ((analyzeResult & WHITESPACE) === WHITESPACE)
             ? str.trim()
             : str;
         if (options.skipLike.test(trimmedStr)) {
@@ -62,36 +81,29 @@ export default function toNumber(str, options = {}) {
         }
     }
 
+    if ((analyzeResult & ZERO) === ZERO) {
+        return 0;
+    }
+
     if ((analyzeResult & HEX) === HEX) {
         return parse_int(str, HEX);
     }
 
-    if ((analyzeResult & OCTAL) === OCTAL) {
+    if ((analyzeResult & REMOVE_TYPE_HINT) !== 0) {
+        const BASE = /** @type {2|8} */ (analyzeResult & OCTAL || analyzeResult & BINARY);
+        trimmedStr = trimmedStr || ((analyzeResult & WHITESPACE) === WHITESPACE)
+            ? str.trim()
+            : str;
         if ((analyzeResult & WHITESPACE) === WHITESPACE) {
-            const trimmedStr = str.trim();
             if (analyzeResult & SIGN) {
-                return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + trimmedStr.slice(3), OCTAL);
+                return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + trimmedStr.slice(3), BASE);
             }
-            return parse_int(str.trim().slice(2), OCTAL);
+            return parse_int(trimmedStr.slice(2), BASE);
         }
         if (analyzeResult & SIGN) {
-            return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + str.slice(3), OCTAL);
+            return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + str.slice(3), BASE);
         }
-        return parse_int(str.trim().slice(2), OCTAL);
-    }
-
-    if ((analyzeResult & BINARY) === BINARY) {
-        if ((analyzeResult & WHITESPACE) === WHITESPACE) {
-            const trimmedStr = str.trim();
-            if (analyzeResult & SIGN) {
-                return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + trimmedStr.slice(3), BINARY);
-            }
-            return parse_int(str.trim().slice(2), BINARY);
-        }
-        if (analyzeResult & SIGN) {
-            return parse_int((analyzeResult & NEGATIVE ? '-' : '+') + str.slice(3), BINARY);
-        }
-        return parse_int(str.trim().slice(2), BINARY);
+        return parse_int(trimmedStr.slice(2), BASE);
     }
 
     if ((analyzeResult & EXPONENT_INDICATOR) === EXPONENT_INDICATOR) {
@@ -114,14 +126,17 @@ export default function toNumber(str, options = {}) {
     }
 
     // If the number is out of safe integer range, return the original string
-    if (((analyzeResult & FLOAT) !== FLOAT) && (num > Number.MAX_SAFE_INTEGER || num < Number.MIN_SAFE_INTEGER)) {
+    if (((analyzeResult & FLOAT) !== FLOAT) && Number.isSafeInteger(num) === false) {
         return str;
     }
 
     if ((analyzeResult & FLOAT) === FLOAT) {
+        if (options.ieee754 === true) {
+            return num;
+        }
         const parsedDecimalPoint = parsedStr.indexOf(".") + 1;
 
-        const strDecimalPoint = str.indexOf(options.decimalPoint || ".") + 1;
+        const strDecimalPoint = str.indexOf(".") + 1;
 
         let i = 0;
         const parsedFracLength = parsedStr.length - parsedDecimalPoint;
@@ -136,7 +151,33 @@ export default function toNumber(str, options = {}) {
         for (; i < str.length; i++) {
             switch (str[i]) {
                 case "0":
+                // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
                 case " ":
+                case "\t":
+                case "\v":
+                case "\f":
+                case "\r":
+                case "\n":
+                case "\ufeff": // Unicode line separator
+                // https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
+                case "\u00A0": // Non-breaking space
+                case "\u1680": // Ogham space mark
+                case "\u2000": // En quad
+                case "\u2001": // Em quad
+                case "\u2002": // En space
+                case "\u2003": // Em space
+                case "\u2004": // Three-per-em space
+                case "\u2005": // Four-per-em space
+                case "\u2006": // Six-per-em space
+                case "\u2007": // Figure space
+                case "\u2008": // Punctuation space
+                case "\u2009": // Thin space
+                case "\u200A": // Hair space
+                case "\u2028": // Line separator
+                case "\u2029": // Paragraph separator
+                case "\u202F": // Narrow no-break space
+                case "\u205F": // Medium mathematical space
+                case "\u3000": // Ideographic space
                     continue;
                 default:
                     return str;
@@ -147,48 +188,49 @@ export default function toNumber(str, options = {}) {
     return num;
 }
 
-const NUMBER = /** @type {const} */ assertBitmask(0, 0);
-const NOT_A_NUMBER = /** @type {const} */ assertBitmask(1, 1 << 0);
+const NUMBER =                       /** @type {const} */ 0b00000000000000000;
+const NOT_A_NUMBER =                 /** @type {const} */ 0b00000000000000001;
 
-const BINARY = /** @type {const} */ assertBitmask(2, 1 << 1);
-const DECIMAL = /** @type {const} */ assertBitmask(4, 1 << 2);
-const OCTAL = /** @type {const} */ assertBitmask(8, 1 << 3);
-const HEX = /** @type {const} */ assertBitmask(16, 1 << 4);
+const BINARY =                       /** @type {const} */ 0b00000000000000010;
+const DECIMAL =                      /** @type {const} */ 0b00000000000000100;
+const OCTAL =                        /** @type {const} */ 0b00000000000001000;
+const HEX =                          /** @type {const} */ 0b00000000000010000;
 
-const FLOAT = /** @type {const} */ assertBitmask(32, 1 << 5);
-const INTEGER = /** @type {const} */ assertBitmask(64, 1 << 6);
-const BIGINT = /** @type {const} */ assertBitmask(2112, INTEGER | 1 << 11);
+const FLOAT =                        /** @type {const} */ 0b00000000000100000;
+const INTEGER =                      /** @type {const} */ 0b00000000001000000;
+const BIGINT =                       /** @type {const} */ 0b00000000010000000;
+const INFINITY =                     /** @type {const} */ 0b00000000100000000;
 
 // Special character codes
-const WHITESPACE = /** @type {const} */ assertBitmask(128, 1 << 7);
-const ZERO = /** @type {const} */  assertBitmask(256, 1 << 8);
-const SIGN = /** @type {const} */  assertBitmask(512, 1 << 9);
-const EXPONENT_INDICATOR = /** @type {const} */ assertBitmask(1024, 1 << 10); // 'e' or 'E'
-const BIGINT_LITERAL_SUFFIX = /** @type {const} */ assertBitmask(2048, 1 << 11); // 'n' for BigInt
+const WHITESPACE =                   /** @type {const} */ 0b00000001000000000;
+const SIGN =                         /** @type {const} */ 0b00000010000000000;
+const ZERO =                         /** @type {const} */ 0b00000100000000000;
+const EXPONENT_INDICATOR =           /** @type {const} */ 0b00001000000000000; // 'e' or 'E'
 
 // Positional constants
-const BEGIN = /** @type {const} */ assertBitmask(2048, 1 << 11);
-const END = /** @type {const} */ assertBitmask(4096, 1 << 12);
+const BEGIN =                        /** @type {const} */ 0b00010000000000000;
+const END =                          /** @type {const} */ 0b00100000000000000;
 
-const LEADING_WHITESPACE = /** @type {const} */ assertBitmask(2176, WHITESPACE | BEGIN);
-const TRAILING_WHITESPACE = /** @type {const} */ assertBitmask(4224, WHITESPACE | END);
+const NEGATIVE =                     /** @type {const} */ 0b01000000000000000;
 
-const BEGIN_INTEGER_DIGITS = /** @type {const} */ assertBitmask(2052, DECIMAL | BEGIN);
-const BEGIN_FRAC_DIGITS = /** @type {const} */ assertBitmask(2080, FLOAT | BEGIN);
-const BEGIN_HEX = /** @type {const} */ assertBitmask(2064, HEX | BEGIN);
-const BEGIN_OCTAL = /** @type {const} */ assertBitmask(2056, OCTAL | BEGIN);
-const BEGIN_BINARY = /** @type {const} */ assertBitmask(2050, BINARY | BEGIN);
+const LEADING_WHITESPACE =           /** @type {const} */ assertBitmask(8704, BEGIN | WHITESPACE);
+const TRAILING_WHITESPACE =          /** @type {const} */ assertBitmask(16896, END | WHITESPACE);
 
-const BEGIN_EXPONENT = /** @type {const} */ assertBitmask(3072, EXPONENT_INDICATOR | BEGIN);
-const EXPONENT_SIGN = /** @type {const} */ assertBitmask(1536, EXPONENT_INDICATOR | SIGN);
-const EXPONENT_INTEGER = /** @type {const} */ assertBitmask(1088, EXPONENT_INDICATOR | INTEGER);
+const BEGIN_INTEGER_DIGITS =         /** @type {const} */ assertBitmask(8196, BEGIN | DECIMAL);
+const BEGIN_FRAC_DIGITS =            /** @type {const} */ assertBitmask(8224, BEGIN | FLOAT);
+const BEGIN_HEX =                    /** @type {const} */ assertBitmask(8208, BEGIN | HEX);
+const BEGIN_OCTAL =                  /** @type {const} */ assertBitmask(8200, BEGIN | OCTAL);
+const BEGIN_BINARY =                 /** @type {const} */ assertBitmask(8194, BEGIN | BINARY);
 
-const FIRST_DIGIT_ZERO = /** @type {const} */ assertBitmask(2304, ZERO | BEGIN);
-const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(6400, ZERO | BEGIN | END);
-const LEADING_ZEROS = /** @type {const} */ assertBitmask(2308, ZERO | BEGIN | DECIMAL);
+const BEGIN_EXPONENT =               /** @type {const} */ assertBitmask(12288, EXPONENT_INDICATOR | BEGIN);
+const EXPONENT_SIGN =                /** @type {const} */ assertBitmask(5120, EXPONENT_INDICATOR | SIGN);
+const EXPONENT_INTEGER =             /** @type {const} */ assertBitmask(4160, EXPONENT_INDICATOR | INTEGER);
 
-const INFINITY = /** @type {const} */ assertBitmask(8192, 1 << 13);
-const NEGATIVE = /** @type {const} */ assertBitmask(16384, 1 << 14);
+const BEGIN_ZERO =                   /** @type {const} */ assertBitmask(10240, BEGIN | ZERO);
+const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(26624, ZERO | BEGIN | END);
+const LEADING_ZEROS =                /** @type {const} */ assertBitmask(10244, ZERO | BEGIN | DECIMAL);
+
+const REMOVE_TYPE_HINT =             /** @type {const} */ assertBitmask(10, BINARY | OCTAL);
 
 /**
  * @typedef {typeof NUMBER |
@@ -200,7 +242,6 @@ const NEGATIVE = /** @type {const} */ assertBitmask(16384, 1 << 14);
  *   typeof FLOAT |
  *   typeof INTEGER |
  *   typeof BIGINT |
- *   typeof BIGINT_LITERAL_SUFFIX |
  *   typeof ZERO |
  *   typeof WHITESPACE |
  *   typeof BEGIN |
@@ -213,7 +254,7 @@ const NEGATIVE = /** @type {const} */ assertBitmask(16384, 1 << 14);
  *   typeof BEGIN_HEX |
  *   typeof BEGIN_OCTAL |
  *   typeof BEGIN_EXPONENT |
- *   typeof FIRST_DIGIT_ZERO |
+ *   typeof BEGIN_ZERO |
  *   typeof FIRST_DIGIT_ZERO_NOT_LEADING |
  *   typeof LEADING_ZEROS |
  *   typeof INFINITY |
@@ -252,14 +293,14 @@ export function analyzeNumber(str, options) {
 
     let result = NUMBER;
 
-    const DECIMAL_POINT = options.decimalPoint || "\.";
     const ON_HEX = options.hex !== false ? BEGIN_HEX : NOT_A_NUMBER;
     const ON_E = options.eNotation !== false ? BEGIN_EXPONENT : NOT_A_NUMBER;
-    const ON_BIGINT = options.bigint === true ? BIGINT_LITERAL_SUFFIX : NOT_A_NUMBER;
+    const ON_BIGINT = options.bigint === true ? BIGINT : NOT_A_NUMBER;
     const ON_BINARY = options.binary === true ? BEGIN_BINARY : NOT_A_NUMBER;
     const ON_OCTAL = options.octal === true ? BEGIN_OCTAL : NOT_A_NUMBER;
-    const ON_LEADING_ZEROS = options.leadingZeros === false ? FIRST_DIGIT_ZERO_NOT_LEADING : FIRST_DIGIT_ZERO;
+    const ON_LEADING_ZEROS = options.leadingZeros === false ? FIRST_DIGIT_ZERO_NOT_LEADING : BEGIN_ZERO;
     const ON_INFINITY = options.infinity === true ? INFINITY : NOT_A_NUMBER;
+    const ON_EMPTY = options.empty === true ? ZERO : NOT_A_NUMBER;
 
     while (++pos < len) {
         switch (str[pos]) {
@@ -267,7 +308,7 @@ export function analyzeNumber(str, options) {
                 switch (state) {
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                         return NOT_A_NUMBER;
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                         state = LEADING_ZEROS;
                         continue;
                     case LEADING_WHITESPACE:
@@ -319,7 +360,7 @@ export function analyzeNumber(str, options) {
                     case EXPONENT_INTEGER:
                         continue;
                     case SIGN:
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                     case LEADING_ZEROS:
                     case BEGIN:
                     case LEADING_WHITESPACE:
@@ -366,7 +407,7 @@ export function analyzeNumber(str, options) {
                         state = HEX;
                     case HEX:
                         continue;
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                         state = ON_BINARY;
                         continue;
@@ -380,7 +421,7 @@ export function analyzeNumber(str, options) {
                         result |= HEX;
                         state = HEX;
                         continue;
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                     case DECIMAL:
                     case BEGIN_FRAC_DIGITS:
@@ -414,12 +455,12 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case DECIMAL_POINT:
+            case ".":
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
                     case SIGN:
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                     case LEADING_ZEROS:
                     case DECIMAL:
@@ -431,7 +472,7 @@ export function analyzeNumber(str, options) {
             case "x":
             case "X":
                 switch (state) {
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                         state = ON_HEX;
                         continue;
@@ -441,7 +482,7 @@ export function analyzeNumber(str, options) {
             case "o":
             case "O":
                 switch (state) {
-                    case FIRST_DIGIT_ZERO:
+                    case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                         state = ON_OCTAL;
                         continue;
@@ -515,7 +556,7 @@ export function analyzeNumber(str, options) {
                     case DECIMAL:
                     case HEX:
                     case EXPONENT_INTEGER:
-                    case BIGINT_LITERAL_SUFFIX:
+                    case BIGINT:
                     case FLOAT:
                     case INFINITY:
                         result |= WHITESPACE;
@@ -532,20 +573,25 @@ export function analyzeNumber(str, options) {
     }
 
     switch (state) {
+        case BEGIN_ZERO:
+        case FIRST_DIGIT_ZERO_NOT_LEADING:
+        case LEADING_ZEROS:
+            result |= ZERO;
+        case EXPONENT_INTEGER:
         case BINARY:
         case OCTAL:
         case DECIMAL:
         case HEX:
         case FLOAT:
         case LEADING_ZEROS:
-        case BIGINT_LITERAL_SUFFIX:
-        case EXPONENT_INTEGER:
-        case FIRST_DIGIT_ZERO:
-        case FIRST_DIGIT_ZERO_NOT_LEADING:
-        case LEADING_ZEROS:
+        case BIGINT:
         case BEGIN_FRAC_DIGITS:
         case TRAILING_WHITESPACE:
         case INFINITY:
+            return result;
+        case BEGIN:
+        case LEADING_WHITESPACE:
+            result |= ON_EMPTY;
             return result;
         default:
             return NOT_A_NUMBER;

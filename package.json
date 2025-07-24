@@ -6,7 +6,7 @@
   "main": "strnum.js",
   "types": "strnum.d.ts",
   "scripts": {
-    "test": "jasmine strnum.test.js",
+    "test": "jasmine *.test.js",
     "types": "tsc -p ."
   },
   "keywords": [
