@@ -91,7 +91,7 @@ export default function toNumber(str, options = {}) {
             }
         }
         num = +trimmedStr.slice(1);
-        if (analyzeResult & NEGATIVE) {
+        if ((analyzeResult & NEGATIVE) === NEGATIVE) {
             num = -num;
         }
     } else {
@@ -141,8 +141,8 @@ export default function toNumber(str, options = {}) {
 
         // ignore trailing zeros and whitespace in the fractional part
         i += strDecimalPoint;
-        for (; i < str.length; i++) {
-            switch (str.codePointAt(i)) {
+        while (i++ < str.length) {
+            switch (str.charCodeAt(i)) {
                 case 0x30: // '0'
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
                 case 0x20: // ' '
@@ -205,18 +205,17 @@ const END =                          /** @type {const} */ 0b00100000000000000;
 
 const NEGATIVE =                     /** @type {const} */ 0b01000000000000000;
 
-const LEADING_WHITESPACE =           /** @type {const} */ assertBitmask(8704, BEGIN | WHITESPACE);
+const LEADING_WHITESPACE =           /** @type {const} */ assertBitmask(8705, BEGIN | WHITESPACE | NOT_A_NUMBER);
 const TRAILING_WHITESPACE =          /** @type {const} */ assertBitmask(16896, END | WHITESPACE);
 
-const BEGIN_INTEGER_DIGITS =         /** @type {const} */ assertBitmask(8196, BEGIN | DECIMAL);
 const BEGIN_FRAC_DIGITS =            /** @type {const} */ assertBitmask(8224, BEGIN | FLOAT);
-const BEGIN_HEX =                    /** @type {const} */ assertBitmask(8208, BEGIN | HEX);
-const BEGIN_OCTAL =                  /** @type {const} */ assertBitmask(8200, BEGIN | OCTAL);
-const BEGIN_BINARY =                 /** @type {const} */ assertBitmask(8194, BEGIN | BINARY);
+const BEGIN_HEX =                    /** @type {const} */ assertBitmask(8209, BEGIN | HEX | NOT_A_NUMBER);
+const BEGIN_OCTAL =                  /** @type {const} */ assertBitmask(8201, BEGIN | OCTAL | NOT_A_NUMBER);
+const BEGIN_BINARY =                 /** @type {const} */ assertBitmask(8195, BEGIN | BINARY | NOT_A_NUMBER);
 
-const BEGIN_EXPONENT =               /** @type {const} */ assertBitmask(12288, EXPONENT_INDICATOR | BEGIN);
-const EXPONENT_SIGN =                /** @type {const} */ assertBitmask(5120, EXPONENT_INDICATOR | SIGN);
-const EXPONENT_DECIMAL =             /** @type {const} */ assertBitmask(4100, EXPONENT_INDICATOR | DECIMAL);
+const BEGIN_EXPONENT =               /** @type {const} */ assertBitmask(12289, EXPONENT_INDICATOR | BEGIN | NOT_A_NUMBER);
+const EXPONENT_SIGN =                /** @type {const} */ assertBitmask(5121, EXPONENT_INDICATOR | SIGN | NOT_A_NUMBER);
+const EXPONENT =             /** @type {const} */ assertBitmask(4100, EXPONENT_INDICATOR | DECIMAL);
 
 const BEGIN_ZERO =                   /** @type {const} */ assertBitmask(10240, BEGIN | ZERO);
 const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(26624, ZERO | BEGIN | END);
@@ -240,7 +239,6 @@ const REMOVE_TYPE_HINT =             /** @type {const} */ assertBitmask(10, BINA
  *   typeof END |
  *   typeof LEADING_WHITESPACE |
  *   typeof TRAILING_WHITESPACE |
- *   typeof BEGIN_INTEGER_DIGITS |
  *   typeof BEGIN_FRAC_DIGITS |
  *   typeof BEGIN_BINARY |
  *   typeof BEGIN_HEX |
@@ -253,7 +251,7 @@ const REMOVE_TYPE_HINT =             /** @type {const} */ assertBitmask(10, BINA
  *   typeof SIGN |
  *   typeof EXPONENT_INDICATOR |
  *   typeof EXPONENT_SIGN |
- *   typeof EXPONENT_DECIMAL
+ *   typeof EXPONENT
  * } State
  */
 
@@ -280,7 +278,6 @@ export function analyzeNumber(str, options) {
 
     /** @type {State} */
     let state = BEGIN;
-    let length = 0;
     let pos = -1;
 
     let result = NUMBER;
@@ -294,11 +291,10 @@ export function analyzeNumber(str, options) {
     const ON_INFINITY = options.infinity === true ? INFINITY : NOT_A_NUMBER;
 
     while (++pos < len) {
-        switch (str.codePointAt(pos)) {
+        switch (str.charCodeAt(pos)) {
             case 0x30: // '0'
                 switch (state) {
                     case FLOAT:
-                        ++length;
                     case DECIMAL:
                     case HEX:
                     case BINARY:
@@ -347,10 +343,9 @@ export function analyzeNumber(str, options) {
             case 0x39: // '9'
                 switch (state) {
                     case FLOAT:
-                        length = 0;
                     case DECIMAL:
                     case HEX:
-                    case EXPONENT_DECIMAL:
+                    case EXPONENT:
                         continue;
                     case SIGN:
                     case BEGIN_ZERO:
@@ -365,7 +360,7 @@ export function analyzeNumber(str, options) {
                         continue;
                     case BEGIN_EXPONENT:
                     case EXPONENT_SIGN:
-                        state = EXPONENT_DECIMAL;
+                        state = EXPONENT;
                         continue;
                     case BEGIN_FRAC_DIGITS:
                         result |= FLOAT;
@@ -504,13 +499,13 @@ export function analyzeNumber(str, options) {
                     case LEADING_WHITESPACE:
                     case SIGN:
                         if (
-                            str[++pos] === "n" &&
-                            str[++pos] === "f" &&
-                            str[++pos] === "i" &&
-                            str[++pos] === "n" &&
-                            str[++pos] === "i" &&
-                            str[++pos] === "t" &&
-                            str[++pos] === "y"
+                            str.charCodeAt(++pos) === 0x6E && // 'n'
+                            str.charCodeAt(++pos) === 0x66 && // 'f'
+                            str.charCodeAt(++pos) === 0x69 && // 'i'
+                            str.charCodeAt(++pos) === 0x6E && // 'n'
+                            str.charCodeAt(++pos) === 0x69 && // 'i'
+                            str.charCodeAt(++pos) === 0x74 && // 't'
+                            str.charCodeAt(++pos) === 0x79 // 'y'
                         ) {
                             result |= INFINITY;
                             state = ON_INFINITY;
@@ -558,7 +553,7 @@ export function analyzeNumber(str, options) {
                     case OCTAL:
                     case DECIMAL:
                     case HEX:
-                    case EXPONENT_DECIMAL:
+                    case EXPONENT:
                     case BIGINT:
                     case FLOAT:
                     case INFINITY:
@@ -573,23 +568,10 @@ export function analyzeNumber(str, options) {
         }
     }
 
-    switch (state) {
-        case BEGIN_ZERO:
-        case FIRST_DIGIT_ZERO_NOT_LEADING:
-        case LEADING_ZEROS:
-            result |= ZERO;
-        case EXPONENT_DECIMAL:
-        case BINARY:
-        case OCTAL:
-        case DECIMAL:
-        case HEX:
-        case FLOAT:
-        case BIGINT:
-        case BEGIN_FRAC_DIGITS:
-        case TRAILING_WHITESPACE:
-        case INFINITY:
-            return result;
-        default:
-            return NOT_A_NUMBER;
+    if (state & NOT_A_NUMBER) {
+        return NOT_A_NUMBER;
+    } else if (state & ZERO) {
+        return result | ZERO;
     }
+    return result;
 }
