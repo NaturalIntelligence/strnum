@@ -78,7 +78,7 @@ export default function toNumber(str, options = {}) {
     let num;
     if ((analyzeResult & BIGINT) === BIGINT) {
         num = parse_int(str);
-    }  else if ((analyzeResult & SIGN) === 0) {
+    } else if ((analyzeResult & SIGN) === 0) {
         num = +str;
     } else if ((analyzeResult & HEX) === HEX) {
         num = parse_int(str, 16);
@@ -142,35 +142,35 @@ export default function toNumber(str, options = {}) {
         // ignore trailing zeros and whitespace in the fractional part
         i += strDecimalPoint;
         for (; i < str.length; i++) {
-            switch (str[i]) {
-                case "0":
+            switch (str.codePointAt(i)) {
+                case 0x30: // '0'
                 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-                case " ":
-                case "\t":
-                case "\v":
-                case "\f":
-                case "\r":
-                case "\n":
-                case "\ufeff": // Unicode line separator
+                case 0x20: // ' '
+                case 0x09: // '\t'
+                case 0x0b: // '\v'
+                case 0x0c: // '\f'
+                case 0x0d: // '\r'
+                case 0x0a: // '\n'
+                case 0xFEFF: // '\ufeff' (Unicode line separator)
                 // https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
-                case "\u00A0": // Non-breaking space
-                case "\u1680": // Ogham space mark
-                case "\u2000": // En quad
-                case "\u2001": // Em quad
-                case "\u2002": // En space
-                case "\u2003": // Em space
-                case "\u2004": // Three-per-em space
-                case "\u2005": // Four-per-em space
-                case "\u2006": // Six-per-em space
-                case "\u2007": // Figure space
-                case "\u2008": // Punctuation space
-                case "\u2009": // Thin space
-                case "\u200A": // Hair space
-                case "\u2028": // Line separator
-                case "\u2029": // Paragraph separator
-                case "\u202F": // Narrow no-break space
-                case "\u205F": // Medium mathematical space
-                case "\u3000": // Ideographic space
+                case 0xA0: // Non-breaking space
+                case 0x1680: // Ogham space mark
+                case 0x2000: // En quad
+                case 0x2001: // Em quad
+                case 0x2002: // En space
+                case 0x2003: // Em space
+                case 0x2004: // Three-per-em space
+                case 0x2005: // Four-per-em space
+                case 0x2006: // Six-per-em space
+                case 0x2007: // Figure space
+                case 0x2008: // Punctuation space
+                case 0x2009: // Thin space
+                case 0x200A: // Hair space
+                case 0x2028: // Line separator
+                case 0x2029: // Paragraph separator
+                case 0x202F: // Narrow no-break space
+                case 0x205F: // Medium mathematical space
+                case 0x3000: // Ideographic space
                     continue;
                 default:
                     return str;
@@ -294,8 +294,8 @@ export function analyzeNumber(str, options) {
     const ON_INFINITY = options.infinity === true ? INFINITY : NOT_A_NUMBER;
 
     while (++pos < len) {
-        switch (str[pos]) {
-            case "0":
+        switch (str.codePointAt(pos)) {
+            case 0x30: // '0'
                 switch (state) {
                     case FLOAT:
                         ++length;
@@ -320,7 +320,7 @@ export function analyzeNumber(str, options) {
                         state = BINARY;
                         continue;
                 }
-            case "1":
+            case 0x31: // '1'
                 switch (state) {
                     case BINARY:
                         continue;
@@ -329,12 +329,12 @@ export function analyzeNumber(str, options) {
                         state = BINARY;
                         continue;
                 }
-            case "2":
-            case "3":
-            case "4":
-            case "5":
-            case "6":
-            case "7":
+            case 0x32: // '2'
+            case 0x33: // '3'
+            case 0x34: // '4'
+            case 0x35: // '5'
+            case 0x36: // '6'
+            case 0x37: // '7'
                 switch (state) {
                     case OCTAL:
                         continue;
@@ -343,8 +343,8 @@ export function analyzeNumber(str, options) {
                         state = OCTAL;
                         continue;
                 }
-            case "8":
-            case "9":
+            case 0x38: // '8'
+            case 0x39: // '9'
                 switch (state) {
                     case FLOAT:
                         length = 0;
@@ -374,14 +374,14 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "a":
-            case "c":
-            case "d":
-            case "f":
-            case "A":
-            case "C":
-            case "D":
-            case "F":
+            case 0x61: // 'a'
+            case 0x63: // 'c'
+            case 0x64: // 'd'
+            case 0x66: // 'f'
+            case 0x41: // 'A'
+            case 0x43: // 'C'
+            case 0x44: // 'D'
+            case 0x46: // 'F'
                 switch (state) {
                     case HEX:
                         continue;
@@ -392,8 +392,8 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "b":
-            case "B":
+            case 0x62: // 'b'
+            case 0x42: // 'B'
                 switch (state) {
                     case HEX:
                         continue;
@@ -408,8 +408,8 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "e":
-            case "E":
+            case 0x65: // 'e'
+            case 0x45: // 'E'
                 switch (state) {
                     case HEX:
                         continue;
@@ -428,7 +428,7 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "-":
+            case 0x2D: // '-'
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
@@ -442,7 +442,7 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "+":
+            case 0x2B: // '+'
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
@@ -455,7 +455,7 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case ".":
+            case 0x2E: // '.'
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
@@ -469,8 +469,8 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "x":
-            case "X":
+            case 0x78: // 'x'
+            case 0x58: // 'X'
                 switch (state) {
                     case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
@@ -479,8 +479,8 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "o":
-            case "O":
+            case 0x6F: // 'o'
+            case 0x4F: // 'O'
                 switch (state) {
                     case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
@@ -489,7 +489,7 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "n":
+            case 0x6E: // 'n'
                 switch (state) {
                     case DECIMAL:
                         result |= BIGINT;
@@ -498,7 +498,7 @@ export function analyzeNumber(str, options) {
                     default:
                         return NOT_A_NUMBER;
                 }
-            case "I":
+            case 0x49: // 'I'
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
@@ -520,32 +520,32 @@ export function analyzeNumber(str, options) {
                         return NOT_A_NUMBER;
                 }
             // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar#white_space
-            case " ":
-            case "\t":
-            case "\v":
-            case "\f":
-            case "\r":
-            case "\n":
-            case "\ufeff": // Unicode line separator
+            case 0x20: // ' '
+            case 0x09: // '\t'
+            case 0x0b: // '\v'
+            case 0x0c: // '\f'
+            case 0x0d: // '\r'
+            case 0x0a: // '\n'
+            case 0xFEFF: // '\ufeff' (Unicode line separator)
             // https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5Cp%7BGeneral_Category%3DSpace_Separator%7D
-            case "\u00A0": // Non-breaking space
-            case "\u1680": // Ogham space mark
-            case "\u2000": // En quad
-            case "\u2001": // Em quad
-            case "\u2002": // En space
-            case "\u2003": // Em space
-            case "\u2004": // Three-per-em space
-            case "\u2005": // Four-per-em space
-            case "\u2006": // Six-per-em space
-            case "\u2007": // Figure space
-            case "\u2008": // Punctuation space
-            case "\u2009": // Thin space
-            case "\u200A": // Hair space
-            case "\u2028": // Line separator
-            case "\u2029": // Paragraph separator
-            case "\u202F": // Narrow no-break space
-            case "\u205F": // Medium mathematical space
-            case "\u3000": // Ideographic space
+            case 0xA0: // Non-breaking space
+            case 0x1680: // Ogham space mark
+            case 0x2000: // En quad
+            case 0x2001: // Em quad
+            case 0x2002: // En space
+            case 0x2003: // Em space
+            case 0x2004: // Three-per-em space
+            case 0x2005: // Four-per-em space
+            case 0x2006: // Six-per-em space
+            case 0x2007: // Figure space
+            case 0x2008: // Punctuation space
+            case 0x2009: // Thin space
+            case 0x200A: // Hair space
+            case 0x2028: // Line separator
+            case 0x2029: // Paragraph separator
+            case 0x202F: // Narrow no-break space
+            case 0x205F: // Medium mathematical space
+            case 0x3000: // Ideographic space
                 switch (state) {
                     case LEADING_WHITESPACE:
                     case TRAILING_WHITESPACE:
