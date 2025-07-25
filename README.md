@@ -18,8 +18,8 @@ npm install strnum
 const toNumber = require("strnum");
 
 toNumber(undefined) // undefined
-toNumber(null)) //null
-toNumber("")) // ""
+toNumber(null) //null
+toNumber("") // ""
 toNumber("string"); //"string")
 toNumber("12,12"); //"12,12")
 toNumber("12 12"); //"12 12")

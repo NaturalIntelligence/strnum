@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "ES2015",
+        "checkJs": true,
+        "allowJs": true,
+        "declaration": true,
+        "outFile": "strnum.d.ts",
+        "emitDeclarationOnly": true
+    },
+    "include": [
+        "strnum.js"
+    ]
+}

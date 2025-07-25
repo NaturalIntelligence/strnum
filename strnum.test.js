@@ -24,6 +24,7 @@ describe("Should convert all the valid numeric strings to number", () => {
     it("should parse hexadecimal values", () => {
         expect(toNumber("0x2f")).toEqual(47);
         expect(toNumber("-0x2f")).toEqual(-47);
+        expect(toNumber("0x0", { hex :  true})).toEqual(0);
         expect(toNumber("0x2f", { hex :  true})).toEqual(47);
         expect(toNumber("-0x2f", { hex :  true})).toEqual(-47);
         expect(toNumber("0x2f", { hex :  false})).toEqual("0x2f");
@@ -31,6 +32,7 @@ describe("Should convert all the valid numeric strings to number", () => {
     })
     it("should not parse strings with 0x embedded", () => {
         expect(toNumber("0xzz")).toEqual("0xzz");
+        expect(toNumber("0x")).toEqual("0x");
         expect(toNumber("iweraf0x123qwerqwer")).toEqual("iweraf0x123qwerqwer");
         expect(toNumber("1230x55")).toEqual("1230x55");
         expect(toNumber("JVBERi0xLjMNCiXi48")).toEqual("JVBERi0xLjMNCiXi48");
@@ -55,7 +57,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  false})).toEqual("000000000000000000000000017717");
         expect(toNumber("000000000000000000000000017717"  ,  { leadingZeros :  true})).toEqual(17717);
         expect(toNumber("020211201030005811824")  ).toEqual("020211201030005811824");
-        expect(toNumber("0420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
+        expect(toNumber("0420926189200190257681175017717", { safeInteger: false })  ).toEqual(4.209261892001902e+29);
     })
     it("invalid floating number", () => {
         expect(toNumber("20.21.030")  ).toEqual("20.21.030");
@@ -110,6 +112,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("20211201030005811824")  ).toEqual("20211201030005811824");
         expect(toNumber("20.211201030005811824")  ).toEqual("20.211201030005811824");
         expect(toNumber("0.211201030005811824")  ).toEqual("0.211201030005811824");
+        expect(toNumber("0.21120103000500000000000 ")  ).toEqual(0.211201030005);
     });
     it("scientific notation", () => {
         expect(toNumber("01.0e2"  ,  { leadingZeros :  false})).toEqual("01.0e2");
@@ -118,15 +121,26 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-01.0e2") ).toEqual(-100);
         expect(toNumber("1.0e2") ).toEqual(100);
 
+        expect(toNumber("1.0e2 ") ).toEqual(100);
+        expect(toNumber("1.0e02") ).toEqual(100);
+        expect(toNumber("1.0e002") ).toEqual(100);
+
         expect(toNumber("-1.0e2") ).toEqual(-100);
         expect(toNumber("1.0e-2")).toEqual(0.01);
         
-        expect(toNumber("420926189200190257681175017717")  ).toEqual(4.209261892001902e+29);
+        expect(toNumber("420926189200190257681175017717", { safeInteger: false })  ).toEqual(4.209261892001902e+29);
         expect(toNumber("420926189200190257681175017717" , { eNotation: false} )).toEqual("420926189200190257681175017717");
         
         expect(toNumber("1e-2")).toEqual(0.01);
         expect(toNumber("1e+2")).toEqual(100);
         expect(toNumber("1.e+2")).toEqual(100);
+        expect(toNumber("1.e++2")).toEqual("1.e++2");
+        expect(toNumber("1.e+-2")).toEqual("1.e+-2");
+        expect(toNumber("1.e-+2")).toEqual("1.e-+2");
+        expect(toNumber("1e++2")).toEqual("1e++2");
+        expect(toNumber("1e+-2")).toEqual("1e+-2");
+        expect(toNumber("1e-+2")).toEqual("1e-+2");
+        expect(toNumber("1e.2")).toEqual("1e.2");
     });
 
     it("scientific notation with upper E", () => {
@@ -168,6 +182,27 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("+12.12")).toEqual(12.12);
         expect(toNumber("-12.12")).toEqual(-12.12);
         expect(toNumber("-012.12")).toEqual(-12.12);
-        expect(toNumber("-012.12")).toEqual(-12.12);
+    })
+    it("Infinity", () => {
+        expect(toNumber("Infinity")).toEqual("Infinity");
+        expect(toNumber("-Infinity")).toEqual("-Infinity");
+        expect(toNumber("+Infinity")).toEqual("+Infinity");
+        expect(toNumber("Infinity", { infinity: true })).toEqual(Infinity);
+        expect(toNumber("-Infinity", { infinity: true })).toEqual(-Infinity);
+        expect(toNumber("+Infinity", { infinity: true })).toEqual(+Infinity);
+        expect(toNumber("Infinity", { infinity: false })).toEqual("Infinity");
+        expect(toNumber("-Infinity", { infinity: false })).toEqual("-Infinity");
+        expect(toNumber("+Infinity", { infinity: false })).toEqual("+Infinity");
+        expect(toNumber("  Infinity  ")).toEqual("  Infinity  ");
+        expect(toNumber("  -Infinity  ")).toEqual("  -Infinity  ");
+        expect(toNumber("  +Infinity  ")).toEqual("  +Infinity  ");
+        expect(toNumber("  Infinity  ", { infinity: true })).toEqual(Infinity);
+        expect(toNumber("  -Infinity  ", { infinity: true })).toEqual(-Infinity);
+        expect(toNumber("  +Infinity  ", { infinity: true })).toEqual(Infinity);
+    })
+    
+    it("bigint", () => {
+        expect(toNumber("1212n", { bigint: true })).toEqual(1212);
+        expect(toNumber("-1212n", { bigint: true })).toEqual(-1212);
     })
 });

@@ -4,8 +4,10 @@
   "description": "Parse String to Number based on configuration",
   "type": "module",
   "main": "strnum.js",
+  "types": "strnum.d.ts",
   "scripts": {
-    "test": "jasmine strnum.test.js"
+    "test": "jasmine *.test.js",
+    "types": "tsc -p ."
   },
   "keywords": [
     "string",
@@ -26,6 +28,8 @@
     }
   ],
   "devDependencies": {
-    "jasmine": "^5.6.0"
+    "jasmine": "^5.6.0",
+    "tinybench": "^4.0.1",
+    "typescript": "^5.8.3"
   }
 }
