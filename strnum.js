@@ -208,14 +208,15 @@ const NEGATIVE =                     /** @type {const} */ 0b01000000000000000;
 const LEADING_WHITESPACE =           /** @type {const} */ assertBitmask(8705, BEGIN | WHITESPACE | NOT_A_NUMBER);
 const TRAILING_WHITESPACE =          /** @type {const} */ assertBitmask(16896, END | WHITESPACE);
 
+const BEGIN_SIGN =                   /** @type {const} */ assertBitmask(9217, BEGIN | SIGN | NOT_A_NUMBER);
 const BEGIN_FRAC_DIGITS =            /** @type {const} */ assertBitmask(8224, BEGIN | FLOAT);
 const BEGIN_HEX =                    /** @type {const} */ assertBitmask(8209, BEGIN | HEX | NOT_A_NUMBER);
 const BEGIN_OCTAL =                  /** @type {const} */ assertBitmask(8201, BEGIN | OCTAL | NOT_A_NUMBER);
 const BEGIN_BINARY =                 /** @type {const} */ assertBitmask(8195, BEGIN | BINARY | NOT_A_NUMBER);
 
 const BEGIN_EXPONENT =               /** @type {const} */ assertBitmask(12289, EXPONENT_INDICATOR | BEGIN | NOT_A_NUMBER);
-const EXPONENT_SIGN =                /** @type {const} */ assertBitmask(5121, EXPONENT_INDICATOR | SIGN | NOT_A_NUMBER);
-const EXPONENT =             /** @type {const} */ assertBitmask(4100, EXPONENT_INDICATOR | DECIMAL);
+const BEGIN_EXPONENT_SIGN =                /** @type {const} */ assertBitmask(5121, EXPONENT_INDICATOR | SIGN | NOT_A_NUMBER);
+const EXPONENT =                     /** @type {const} */ assertBitmask(4100, EXPONENT_INDICATOR | DECIMAL);
 
 const BEGIN_ZERO =                   /** @type {const} */ assertBitmask(10240, BEGIN | ZERO);
 const FIRST_DIGIT_ZERO_NOT_LEADING = /** @type {const} */ assertBitmask(26624, ZERO | BEGIN | END);
@@ -233,10 +234,7 @@ const REMOVE_TYPE_HINT =             /** @type {const} */ assertBitmask(10, BINA
  *   typeof FLOAT |
  *   typeof INTEGER |
  *   typeof BIGINT |
- *   typeof ZERO |
- *   typeof WHITESPACE |
  *   typeof BEGIN |
- *   typeof END |
  *   typeof LEADING_WHITESPACE |
  *   typeof TRAILING_WHITESPACE |
  *   typeof BEGIN_FRAC_DIGITS |
@@ -248,9 +246,9 @@ const REMOVE_TYPE_HINT =             /** @type {const} */ assertBitmask(10, BINA
  *   typeof FIRST_DIGIT_ZERO_NOT_LEADING |
  *   typeof LEADING_ZEROS |
  *   typeof INFINITY |
- *   typeof SIGN |
+ *   typeof BEGIN_SIGN |
  *   typeof EXPONENT_INDICATOR |
- *   typeof EXPONENT_SIGN |
+ *   typeof BEGIN_EXPONENT_SIGN |
  *   typeof EXPONENT
  * } State
  */
@@ -294,13 +292,6 @@ export function analyzeNumber(str, options) {
         switch (str.charCodeAt(pos)) {
             case 0x30: // '0'
                 switch (state) {
-                    case FLOAT:
-                    case DECIMAL:
-                    case HEX:
-                    case BINARY:
-                    case OCTAL:
-                    case BEGIN_FRAC_DIGITS:
-                        continue;
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                         return NOT_A_NUMBER;
                     case BEGIN_ZERO:
@@ -308,12 +299,8 @@ export function analyzeNumber(str, options) {
                         continue;
                     case LEADING_WHITESPACE:
                     case BEGIN:
-                    case SIGN:
+                    case BEGIN_SIGN:
                         state = ON_LEADING_ZEROS;
-                        continue;
-                    case BEGIN_BINARY:
-                        result |= BINARY;
-                        state = BINARY;
                         continue;
                 }
             case 0x31: // '1'
@@ -347,7 +334,7 @@ export function analyzeNumber(str, options) {
                     case HEX:
                     case EXPONENT:
                         continue;
-                    case SIGN:
+                    case BEGIN_SIGN:
                     case BEGIN_ZERO:
                     case LEADING_ZEROS:
                     case BEGIN:
@@ -359,7 +346,7 @@ export function analyzeNumber(str, options) {
                         state = HEX;
                         continue;
                     case BEGIN_EXPONENT:
-                    case EXPONENT_SIGN:
+                    case BEGIN_EXPONENT_SIGN:
                         state = EXPONENT;
                         continue;
                     case BEGIN_FRAC_DIGITS:
@@ -429,10 +416,10 @@ export function analyzeNumber(str, options) {
                     case LEADING_WHITESPACE:
                         result |= SIGN;
                         result |= NEGATIVE;
-                        state = SIGN;
+                        state = BEGIN_SIGN;
                         continue;
                     case BEGIN_EXPONENT:
-                        state = EXPONENT_SIGN;
+                        state = BEGIN_EXPONENT_SIGN;
                         continue;
                     default:
                         return NOT_A_NUMBER;
@@ -442,10 +429,10 @@ export function analyzeNumber(str, options) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
                         result |= SIGN;
-                        state = SIGN;
+                        state = BEGIN_SIGN;
                         continue;
                     case BEGIN_EXPONENT:
-                        state = EXPONENT_SIGN;
+                        state = BEGIN_EXPONENT_SIGN;
                         continue;
                     default:
                         return NOT_A_NUMBER;
@@ -454,7 +441,7 @@ export function analyzeNumber(str, options) {
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
-                    case SIGN:
+                    case BEGIN_SIGN:
                     case BEGIN_ZERO:
                     case FIRST_DIGIT_ZERO_NOT_LEADING:
                     case LEADING_ZEROS:
@@ -497,7 +484,7 @@ export function analyzeNumber(str, options) {
                 switch (state) {
                     case BEGIN:
                     case LEADING_WHITESPACE:
-                    case SIGN:
+                    case BEGIN_SIGN:
                         if (
                             str.charCodeAt(++pos) === 0x6E && // 'n'
                             str.charCodeAt(++pos) === 0x66 && // 'f'
