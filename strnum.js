@@ -30,7 +30,7 @@ const EXP_CHAR = function () {
     }
 }();
 
-/** @type {(string: string, radix: 2|8|10|16) => number} */
+/** @type {(string: string, radix?: 2|8|10|16) => number} */
 const parse_int = ((function parse_int() {
     if (parseInt) return parseInt;
     else if (Number.parseInt) return Number.parseInt;
@@ -76,7 +76,9 @@ export default function toNumber(str, options = {}) {
     }
 
     let num;
-    if ((analyzeResult & SIGN) === 0) {
+    if ((analyzeResult & BIGINT) === BIGINT) {
+        num = parse_int(str);
+    }  else if ((analyzeResult & SIGN) === 0) {
         num = +str;
     } else if ((analyzeResult & HEX) === HEX) {
         num = parse_int(str, 16);
