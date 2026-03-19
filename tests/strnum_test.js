@@ -126,6 +126,8 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("1e-2")).toEqual(0.01);
         expect(toNumber("1e+2")).toEqual(100);
         expect(toNumber("1.e+2")).toEqual(100);
+
+        expect(toNumber("1.5e3", { leadingZeros: false })).toEqual(1500);
     });
 
     it("scientific notation with upper E", () => {

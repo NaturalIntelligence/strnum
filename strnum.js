@@ -97,11 +97,16 @@ function resolveEnotation(str, trimmedStr, options) {
         else if (leadingZeros.length === 1
             && (notation[3].startsWith(`.${eChar}`) || notation[3][0] === eChar)) {
             return Number(trimmedStr);
-        } else if (options.leadingZeros && !eAdjacentToLeadingZeros) { //accept with leading zeros
-            //remove leading 0s
-            trimmedStr = (notation[1] || "") + notation[3];
+        } else if (leadingZeros.length > 0) {
+            // Has leading zeros — only accept if leadingZeros option allows it
+            if (options.leadingZeros && !eAdjacentToLeadingZeros) {
+                trimmedStr = (notation[1] || "") + notation[3];
+                return Number(trimmedStr);
+            } else return str;
+        } else {
+            // No leading zeros — always valid e-notation, parse it
             return Number(trimmedStr);
-        } else return str;
+        }
     } else {
         return str;
     }
