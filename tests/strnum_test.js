@@ -5,6 +5,7 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber(undefined)).not.toBeDefined();
         expect(toNumber(null)).toEqual(null);
         expect(toNumber("")).toEqual("");
+        expect(toNumber(" ")).toEqual(" ");
         expect(toNumber("string")).toEqual("string");
         expect(toNumber("e89794659669cb7bb967db73a7ea6889c3891727")).toEqual("e89794659669cb7bb967db73a7ea6889c3891727");
     });
