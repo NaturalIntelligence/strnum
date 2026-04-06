@@ -1,0 +1,5 @@
+.vscode
+.github
+tests
+algo.stflow
+package-lock.json
