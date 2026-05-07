@@ -29,6 +29,22 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("0x2f", { hex: false })).toEqual("0x2f");
         expect(toNumber("-0x2f", { hex: false })).toEqual("-0x2f");
     })
+    it("should parse octal values", () => {
+        expect(toNumber("0o10")).toEqual("0o10");
+        expect(toNumber("-0o10")).toEqual("-0o10");
+        expect(toNumber("0o10", { octal: true })).toEqual(8);
+        expect(toNumber("-0o10", { octal: true })).toEqual("-0o10");
+        expect(toNumber("0o10", { octal: false })).toEqual("0o10");
+        expect(toNumber("-0o10", { octal: false })).toEqual("-0o10");
+    })
+    it("should parse binary values", () => {
+        expect(toNumber("0b1010")).toEqual("0b1010");
+        expect(toNumber("-0b1010")).toEqual("-0b1010");
+        expect(toNumber("0b1010", { binary: true })).toEqual(10);
+        expect(toNumber("-0b1010", { binary: true })).toEqual("-0b1010");
+        expect(toNumber("0b1010", { binary: false })).toEqual("0b1010");
+        expect(toNumber("-0b1010", { binary: false })).toEqual("-0b1010");
+    })
     it("should not parse strings with 0x embedded", () => {
         expect(toNumber("0xzz")).toEqual("0xzz");
         expect(toNumber("iweraf0x123qwerqwer")).toEqual("iweraf0x123qwerqwer");
