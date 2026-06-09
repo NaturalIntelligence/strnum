@@ -3,6 +3,8 @@ const binRegex = /^0b[01]+$/;
 const octRegex = /^0o[0-7]+$/;
 const numRegex = /^([\-\+])?(0*)([0-9]*(\.[0-9]*)?)$/;
 
+import anynum from "anynum";
+
 const consider = {
     hex: true,
     binary: false,
@@ -12,6 +14,7 @@ const consider = {
     eNotation: true,
     //skipLike: /regex/,
     infinity: "original", // "null", "infinity" (Infinity type), "string" ("Infinity" (the string literal))
+    unicode: false,
 };
 
 export default function toNumber(str, options = {}) {
@@ -23,7 +26,12 @@ export default function toNumber(str, options = {}) {
     if (trimmedStr.length === 0) return str;
     else if (options.skipLike !== undefined && options.skipLike.test(trimmedStr)) return str;
     else if (trimmedStr === "0") return 0;
-    else if (options.hex && hexRegex.test(trimmedStr)) {
+
+    if (options.unicode) {
+        trimmedStr = anynum(trimmedStr);
+        if (trimmedStr === "0") return 0; // re-check after normalization
+    }
+    if (options.hex && hexRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 16);
     } else if (options.binary && binRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 2);
