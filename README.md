@@ -1,6 +1,10 @@
 # strnum
 Parse string into Number based on configuration
 
+[![strnum downloads](https://img.shields.io/npm/dw/strnum.svg)](https://npm-compare.com/strnum) 
+[![strnum version](https://img.shields.io/npm/v/strnum.svg)](https://www.npmjs.com/package/strnum)
+[![strnum license](https://img.shields.io/npm/l/strnum.svg)](https://github.com/NaturalIntelligence/strnum)
+
 ## Users
 
 <a href="https://github.com/aws-amplify" target="_blank"><img src="https://avatars.githubusercontent.com/u/41077760?s=100&v=4"></a>
