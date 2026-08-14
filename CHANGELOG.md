@@ -1,4 +1,10 @@
 
+**2.4.2 / 2026-08-14**
+- fix: trimZeros to avoid quadratic complexity
+
+**2.4.1 / 2026-06-18**
+- deps: update anynum to 1.0.1
+
 **2.4.0 / 2026-06-09**
 - support unicode numerals using 'anynum'
 
