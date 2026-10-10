@@ -165,6 +165,22 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("00E2", { leadingZeros: false })).toEqual("00E2");
     });
 
+    it("scientific notation: leading zeros directly before the decimal point", () => {
+        expect(toNumber("00.e0", { leadingZeros: true })).toEqual(0);
+        expect(toNumber("-00.e5", { leadingZeros: true })).toEqual(-0);
+        expect(toNumber("00.e0", { leadingZeros: false })).toEqual("00.e0");
+        expect(toNumber("0.e0", { leadingZeros: true })).toEqual(0);
+        expect(toNumber("001.0e2", { leadingZeros: true })).toEqual(100);
+    });
+    it("surrounding whitespace does not change the leading zeros handling", () => {
+        expect(toNumber(" 0.1", { leadingZeros: false })).toEqual(0.1);
+        expect(toNumber(" -0.1", { leadingZeros: false })).toEqual(-0.1);
+        expect(toNumber(" 00.1", { leadingZeros: false })).toEqual(" 00.1");
+        expect(toNumber(" 0.e0", { leadingZeros: false })).toEqual(0);
+        expect(toNumber(" 00.e0")).toEqual(0);
+        expect(toNumber(" 00E2")).toEqual(" 00E2");   // used to be NaN
+    });
+
     it("should skip matching pattern", () => {
         expect(toNumber("0", { skipLike: /.*/ })).toEqual("0");
         expect(toNumber("+12", { skipLike: /\+[0-9]{10}/ })).toEqual(12);
@@ -188,4 +204,57 @@ describe("Should convert all the valid numeric strings to number", () => {
         expect(toNumber("-012.12")).toEqual(-12.12);
         expect(toNumber("-012.12")).toEqual(-12.12);
     })
+});
+
+
+describe("non-numeric strings are always returned unchanged", () => {
+    const nonNumbers = ["E1", "e1", "+E1", ".e1", "A1", "abc", "Sheet2!A1", "12px", "1,5", "1.2.3", "--1", "1e", "NaN", " E1 "];
+
+    for (const infinity of ["original", "null", "infinity", "string"]) {
+        it(`infinity:"${infinity}"`, () => {
+            for (const s of nonNumbers) {
+                expect(toNumber(s, { infinity })).toBe(s);
+            }
+        });
+    }
+});
+
+describe("infinity option applies only to real infinities", () => {
+    const inf = ["Infinity", "-Infinity", "1e1000", "-1e1000"];
+    it("original", () => inf.forEach(s => expect(toNumber(s, { infinity: "original" })).toBe(s)));
+    it("null", () => inf.forEach(s => expect(toNumber(s, { infinity: "null" })).toBeNull()));
+    it("infinity", () => expect(inf.map(s => toNumber(s, { infinity: "infinity" }))).toEqual([Infinity, -Infinity, Infinity, -Infinity]));
+    it("string", () => expect(inf.map(s => toNumber(s, { infinity: "string" }))).toEqual(["Infinity", "-Infinity", "Infinity", "-Infinity"]));
+});
+
+describe("e-notation with leading zeros", () => {
+    it("never returns NaN and matches Number()", () => {
+        for (const s of ["00.e0", "00.e1", "00.E0", "00.E1", "0.e0", "01.0e2", "001.0e2", "-00.e1", "+00.E1"]) {
+            const r = toNumber(s, { leadingZeros: true });
+            expect(Number.isNaN(r)).toBe(false);
+            expect(r).toBe(Number(s));
+        }
+    });
+    it("returns the original string when leadingZeros is false", () => {
+        for (const s of ["00.e0", "00e0"]) expect(toNumber(s, { leadingZeros: false })).toBe(s);
+    });
+    it("keeps 00e0 as a string (zeros adjacent to e)", () => {
+        expect(toNumber("00e0", { leadingZeros: true })).toBe("00e0");
+    });
+});
+
+describe("surrounding whitespace does not change the result", () => {
+    const samples = ["0.1", "0.", "0.10", "+0.1", "00.e0", "00e0", "1.5e3", "007", "abc", "E1", "0x1F", "1e1000"];
+    for (const leadingZeros of [true, false]) {
+        it(`leadingZeros:${leadingZeros}`, () => {
+            for (const s of samples) {
+                const bare = toNumber(s, { leadingZeros });
+                const padded = toNumber(`  ${s} `, { leadingZeros });
+                expect(typeof bare === "number" ? padded : padded === `  ${s} `).toEqual(typeof bare === "number" ? bare : true);
+            }
+        });
+    }
+    it('" 0.1" with leadingZeros:false parses', () => {
+        expect(toNumber(" 0.1", { leadingZeros: false })).toBe(0.1);
+    });
 });
