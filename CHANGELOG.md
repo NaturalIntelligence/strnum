@@ -1,4 +1,9 @@
 
+**2.5.0 / 2026-10-10**
+- fix: lib should return original non-infinity non-numeric strings
+(it should be patch release but released as minor by mistake)
+
+
 **2.4.2 / 2026-08-14**
 - fix: trimZeros to avoid quadratic complexity
 
