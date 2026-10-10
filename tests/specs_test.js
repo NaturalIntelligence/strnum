@@ -23,7 +23,7 @@ describe("strnum vs @byspec/numbers - IEEE 754", () => {
 
     for (const { input, meta } of overflowCases) {
       const result = toNumber(input, specCompatibleOptions);
-      expect(compare(result, meta.value)).toBe(true);
+      expectMatchesSpec(result, input, meta.value);
     }
   });
 
@@ -37,7 +37,7 @@ describe("strnum vs @byspec/numbers - IEEE 754", () => {
         expect(result).toEqual(input);
       } else {
         // console.log(result, meta)
-        expect(compare(result, meta.value)).toBe(true);
+        expectMatchesSpec(result, input, meta.value);
       }
     }
 
@@ -48,7 +48,7 @@ describe("strnum vs @byspec/numbers - IEEE 754", () => {
 
     for (const { input, meta } of negZeroCases) {
       const result = toNumber(input, specCompatibleOptions);
-      expect(compare(result, meta.value)).toBe(true);
+      expectMatchesSpec(result, input, meta.value);
     }
   });
 
@@ -57,7 +57,7 @@ describe("strnum vs @byspec/numbers - IEEE 754", () => {
 
     for (const { input, meta } of nanCases) {
       const result = toNumber(input, specCompatibleOptions);
-      expect(compare(result, meta.value)).toBe(true);
+      expectMatchesSpec(result, input, meta.value);
     }
   });
 });
@@ -73,7 +73,7 @@ describe("strnum vs @byspec/numbers - ECMAScript", () => {
         expect(result).toEqual(input);
       } else {
         // console.log(result, meta)
-        expect(compare(result, meta.value)).toBe(true);
+        expectMatchesSpec(result, input, meta.value);
       }
     }
   });
@@ -86,7 +86,7 @@ describe("strnum vs @byspec/numbers - ECMAScript", () => {
       if (input.trim() === "-0x10") {
         expect(result).toEqual(-16);
       } else {
-        expect(compare(result, meta.value)).toBe(true);
+        expectMatchesSpec(result, input, meta.value);
       }
     }
   });
@@ -100,7 +100,7 @@ describe("strnum vs @byspec/numbers - ECMAScript", () => {
         expect(result).toEqual(input);
       } else {
         // console.log(result, meta)
-        expect(compare(result, meta.value)).toBe(true);
+        expectMatchesSpec(result, input, meta.value);
       }
     }
   });
@@ -133,4 +133,20 @@ describe("strnum options that intentionally diverge from spec", () => {
       }
     }
   });
+
+  it("non-numeric strings are returned unchanged for every infinity option", () => {
+    for (const infinity of ["original", "null", "infinity", "string"]) {
+      for (const s of ["E1", "abc", "Sheet2!A1", "12px"]) {
+        expect(toNumber(s, { infinity })).toBe(s);
+      }
+    }
+  });
 });
+
+function expectMatchesSpec(result, input, expected) {
+  if (Number.isNaN(expected)) {
+    expect(result).toBe(input);        // strnum contract: not a number -> original string
+  } else {
+    expect(compare(result, expected)).toBe(true);
+  }
+}

@@ -38,6 +38,8 @@ export default function toNumber(str, options = {}) {
     } else if (options.octal && octRegex.test(trimmedStr)) {
         return parse_int(trimmedStr, 8);
     } else if (!isFinite(trimmedStr)) { //Infinity
+        const num = Number(trimmedStr);
+        if (Number.isNaN(num)) return str;
         return handleInfinity(str, Number(trimmedStr), options);
     } else if (trimmedStr.includes('e') || trimmedStr.includes('E')) { //eNotation
         return resolveEnotation(str, trimmedStr, options);

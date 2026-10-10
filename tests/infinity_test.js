@@ -14,5 +14,8 @@ describe("Should convert all the valid numeric strings to number", () => {
 
     expect(toNumber("1e309")).toEqual("1e309");
 
+    // not-infinity
+    expect(toNumber("abc", { infinity: "null" })).toEqual("abc");
+
   });
 });
